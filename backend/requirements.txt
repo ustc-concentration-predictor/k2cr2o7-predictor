@@ -1,5 +1,6 @@
 --only-binary :all:
 numpy
+pandas
 fastapi
 uvicorn
 python-multipart
