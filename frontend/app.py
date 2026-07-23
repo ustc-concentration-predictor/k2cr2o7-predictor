@@ -878,7 +878,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     hcro4 = float(species.get("HCrO4_mM", 0.0))
     cr2o7 = float(species.get("Cr2O7_mM", 0.0))
     cro4 = float(species.get("CrO4_mM", 0.0))
-    residual = float(species.get("dimer_residual_mM", 0.0))
+    residual = float(species.get("mass_balance_residual_mM", 0.0))
 
     st.session_state.history.append(
         {
@@ -911,7 +911,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
 
     d1, d2, d3 = st.columns(3)
     d1.metric("Confidence", f"{float(result.get('confidence', 0.0)):.1%}")
-    d2.metric("Dimer residual", f"{residual:.4f} mM")
+    d2.metric("Mass-balance residual", f"{residual:.4f} mM")
     d3.metric("pH", f"{ph:.1f}")
 
     for warning in result.get("warnings", []):
@@ -920,7 +920,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
 
 def render_model_prediction(api_ok: bool) -> None:
     st.title("Model Prediction")
-    st.caption("Workflow: upload ROI image and pH, standardize illumination, extract color features, predict HCrO4- and Cr2O7^2-, then compute CrO4^2-.")
+    st.caption("Workflow: upload ROI image and pH, standardize illumination, extract Lab a, predict total Cr(VI), HCrO4-, and Cr2O7^2-, then compute CrO4^2- by mass balance.")
 
     left, right = st.columns([1, 1])
 
