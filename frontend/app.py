@@ -16,7 +16,7 @@ from streamlit_cropper import st_cropper
 
 
 st.set_page_config(
-    page_title="K2Cr2O7 Species Predictor",
+    page_title="K₂Cr₂O₇ Species Predictor",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -646,8 +646,8 @@ def render_ph_equilibrium_simulator() -> None:
       </style>
 
       <div class="sim-title">
-        <h3>Interactive chromium(VI) equilibrium simulator</h3>
-        <span>Initial solution: 5 mM K2Cr2O7, about 50 mL</span>
+        <h3>Interactive Cr(VI) equilibrium simulator</h3>
+        <span>Initial solution: 5 mM K<sub>2</sub>Cr<sub>2</sub>O<sub>7</sub>, about 50 mL</span>
       </div>
       <div class="sim-stage" style="--ph-pos: 46.15;">
         <svg class="cable-svg" viewBox="0 0 900 470" preserveAspectRatio="none" aria-hidden="true">
@@ -698,10 +698,10 @@ def render_ph_equilibrium_simulator() -> None:
             <div class="ion top">-</div>
             <div class="ion left">-</div>
             <div class="ion right">-</div>
-            <div class="ion-label h"><b>H+</b><span id="hConc"></span> mM</div>
-            <div class="ion-label hcro4"><b>HCrO4-</b><span id="hcro4Conc"></span> mM</div>
-            <div class="ion-label cro4"><b>CrO4^2-</b><span id="cro4Conc"></span> mM</div>
-            <div class="ion-label cr2o7"><b>Cr2O7^2-</b><span id="cr2o7Conc"></span> mM</div>
+            <div class="ion-label h"><b>H<sup>+</sup></b><span id="hConc"></span> mM</div>
+            <div class="ion-label hcro4"><b>HCrO<sub>4</sub><sup>−</sup></b><span id="hcro4Conc"></span> mM</div>
+            <div class="ion-label cro4"><b>CrO<sub>4</sub><sup>2−</sup></b><span id="cro4Conc"></span> mM</div>
+            <div class="ion-label cr2o7"><b>Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup></b><span id="cr2o7Conc"></span> mM</div>
           </div>
         </div>
       </div>
@@ -904,9 +904,9 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
 
     st.success("Prediction completed.")
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("HCrO4-", f"{hcro4:.4f} mM")
-    c2.metric("Cr2O7^2-", f"{cr2o7:.4f} mM")
-    c3.metric("CrO4^2-", f"{cro4:.4f} mM")
+    c1.metric("HCrO₄⁻", f"{hcro4:.4f} mM")
+    c2.metric("Cr₂O₇²⁻", f"{cr2o7:.4f} mM")
+    c3.metric("CrO₄²⁻", f"{cro4:.4f} mM")
     c4.metric("Estimated total Cr(VI)", f"{total_cr:.4f} mM")
 
     d1, d2, d3 = st.columns(3)
@@ -920,7 +920,11 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
 
 def render_model_prediction(api_ok: bool) -> None:
     st.title("Model Prediction")
-    st.caption("Workflow: upload ROI image and pH, standardize illumination, extract Lab a, predict total Cr(VI), HCrO4-, and Cr2O7^2-, then compute CrO4^2- by mass balance.")
+    st.caption(
+        "Workflow: upload an ROI image and pH, standardize illumination, extract "
+        "the Lab a feature, predict total Cr(VI), HCrO₄⁻, and Cr₂O₇²⁻, then "
+        "compute CrO₄²⁻ by mass balance."
+    )
 
     left, right = st.columns([1, 1])
 
@@ -940,7 +944,7 @@ def render_model_prediction(api_ok: bool) -> None:
             st.session_state.roi_selected = True
 
         ph = st.slider("pH", 3.0, 8.0, 6.0, 0.1)
-        st.caption("The deployed model is trained for pH 3-8. pH 7-8 may amplify CrO4^2- uncertainty.")
+        st.caption("The deployed model is trained for pH 3–8. At pH 7–8, CrO₄²⁻ uncertainty may be amplified.")
 
         can_predict = bool(uploaded and api_ok and st.session_state.cropped_image)
         if st.button("Predict", disabled=not can_predict, type="primary"):
@@ -963,10 +967,13 @@ def render_model_prediction(api_ok: bool) -> None:
 
         st.markdown("---")
         st.subheader("Equilibrium basis")
-        st.latex(r"Cr_2O_7^{2-} + H_2O \rightleftharpoons 2HCrO_4^-")
-        st.latex(r"HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}")
-        st.latex(r"[CrO_4^{2-}] = K_{a2}[HCrO_4^-]/[H^+]")
-        st.latex(r"C_{Cr(VI)} = [HCrO_4^-] + [CrO_4^{2-}] + 2[Cr_2O_7^{2-}]")
+        st.latex(r"\mathrm{Cr_2O_7^{2-} + H_2O \rightleftharpoons 2HCrO_4^-}")
+        st.latex(r"\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}}")
+        st.latex(r"[\mathrm{CrO_4^{2-}}] = K_{a,2}\frac{[\mathrm{HCrO_4^-}]}{[\mathrm{H^+}]}")
+        st.latex(
+            r"C_{\mathrm{Cr(VI)}} = [\mathrm{HCrO_4^-}] + "
+            r"[\mathrm{CrO_4^{2-}}] + 2[\mathrm{Cr_2O_7^{2-}}]"
+        )
 
     st.markdown("---")
     render_chat_panel(
@@ -980,7 +987,7 @@ def render_model_prediction(api_ok: bool) -> None:
 
 def render_sidebar(api_ok: bool) -> str:
     with st.sidebar:
-        st.title("K2Cr2O7")
+        st.title("K₂Cr₂O₇")
         st.caption("Chromium(VI) species predictor")
         if api_ok:
             st.success("Backend online")
@@ -999,7 +1006,7 @@ def render_sidebar(api_ok: bool) -> str:
             for item in st.session_state.history[-5:]:
                 st.write(
                     f"{item['time']} · pH {item['ph']:.1f} · "
-                    f"CrO4^2- {item['cro4']:.3f} mM"
+                    f"CrO₄²⁻ {item['cro4']:.3f} mM"
                 )
     return module
 
@@ -1017,7 +1024,7 @@ def main() -> None:
         render_model_prediction(api_ok)
 
     st.markdown("---")
-    st.caption("K2Cr2O7 Prediction System · ML species prediction with equilibrium calculation")
+    st.caption("K₂Cr₂O₇ Prediction System · ML species prediction with equilibrium calculation")
 
 
 if __name__ == "__main__":

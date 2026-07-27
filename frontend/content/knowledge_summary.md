@@ -6,30 +6,34 @@ Many chemical reactions are reversible. Under fixed conditions, a reversible rea
 
 For a general reaction:
 
-```text
-mA + nB <=> pC + qD
-```
+$$
+mA+nB \rightleftharpoons pC+qD
+$$
 
-the reaction quotient is:
+the reaction quotient, $Q$, is:
 
-```text
-Q = c(C)^p c(D)^q / [c(A)^m c(B)^n]
-```
+$$
+Q=\frac{c(\mathrm{C})^p\,c(\mathrm{D})^q}
+        {c(\mathrm{A})^m\,c(\mathrm{B})^n}
+$$
 
-At equilibrium, Q becomes a constant K. If an external factor changes the system, the equilibrium shifts in the direction that reduces the effect of that change. This is Le Chatelier's principle.
+At equilibrium, $Q$ becomes the equilibrium constant, $K$. If an external factor changes the system, the equilibrium shifts in the direction that reduces the effect of that change. This is Le Chatelier's principle.
 
-## 2. Color change of K2Cr2O7 solution
+## 2. Color change of K₂Cr₂O₇ solution
 
 In potassium dichromate solution, the most important chromium(VI) equilibria are:
 
-```text
-Cr2O7^2- + H2O <=> 2HCrO4-
-HCrO4- <=> H+ + CrO4^2-
-```
+$$
+\mathrm{Cr_2O_7^{2-}+H_2O \rightleftharpoons 2HCrO_4^-}
+$$
 
-Cr2O7^2- is orange, CrO4^2- is yellow, and HCrO4- is almost colorless in the visible range. Therefore, solution color reflects the relative distribution of these chromium species.
+$$
+\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}}
+$$
 
-When hydroxide is added, [H+] decreases. The second equilibrium shifts toward CrO4^2-, and the first equilibrium also shifts toward HCrO4-. The visible result is that the solution becomes more yellow.
+$\mathrm{Cr_2O_7^{2-}}$ is orange, $\mathrm{CrO_4^{2-}}$ is yellow, and $\mathrm{HCrO_4^-}$ is weakly colored in the visible range. Therefore, solution color reflects the relative distribution of these chromium species.
+
+When hydroxide is added, $[\mathrm{H^+}]$ decreases. The second equilibrium shifts toward $\mathrm{CrO_4^{2-}}$, and the first equilibrium also shifts toward $\mathrm{HCrO_4^-}$. The visible result is that the solution becomes more yellow.
 
 ## 3. Activity and concentration
 
@@ -37,73 +41,78 @@ In ideal dilute solutions, concentration can be used directly in equilibrium cal
 
 To describe this, concentration is corrected into activity:
 
-```text
-aB = gammaB * cB / c0
-```
+$$
+a_\mathrm{B}=\gamma_\mathrm{B}\frac{c_\mathrm{B}}{c^\circ}
+$$
 
-where aB is activity, gammaB is the activity coefficient, and c0 is the standard concentration, usually 1 mol/L. Strict thermodynamic equilibrium constants should use activities, but concentration-based constants are often acceptable for dilute solutions.
+where $a_\mathrm{B}$ is activity, $\gamma_\mathrm{B}$ is the activity coefficient, and $c^\circ$ is the standard concentration, usually $1\ \mathrm{mol\,L^{-1}}$. Strict thermodynamic equilibrium constants should use activities, but concentration-based constants are often acceptable for dilute solutions.
 
 ## 4. Reaction direction and Gibbs free energy
 
-The direction of a reaction can be judged by comparing Q and K. It can also be judged thermodynamically by the molar Gibbs free energy change:
+The direction of a reaction can be judged by comparing $Q$ and $K$. It can also be judged thermodynamically by the molar Gibbs free-energy change:
 
-```text
-Delta G = RT ln(Q / K)
-```
+$$
+\Delta_\mathrm{r}G=RT\ln\!\left(\frac{Q}{K}\right)
+$$
 
 Therefore:
 
-```text
-Q < K: forward reaction is favored
-Q = K: equilibrium
-Q > K: reverse reaction is favored
-```
+- $Q<K$: the forward reaction is favored.
+- $Q=K$: the system is at equilibrium.
+- $Q>K$: the reverse reaction is favored.
 
 This connects the high-school description of equilibrium movement with thermodynamic driving force.
 
 ## 5. Temperature effect
 
-Temperature changes affect equilibrium constants. The van't Hoff relation describes the relationship between temperature and K:
+Temperature changes affect equilibrium constants. The van't Hoff relation describes the relationship between temperature and $K$:
 
-```text
-d ln K / dT = Delta H / (R T^2)
-```
+$$
+\frac{\mathrm{d}\ln K}{\mathrm{d}T}
+=\frac{\Delta_\mathrm{r}H^\circ}{RT^2}
+$$
 
-For an endothermic reaction, increasing temperature increases K and favors the forward reaction. For an exothermic reaction, increasing temperature decreases K and disfavors the forward reaction.
+For an endothermic reaction, increasing temperature increases $K$ and favors the forward reaction. For an exothermic reaction, increasing temperature decreases $K$ and disfavors the forward reaction.
 
-For dichromate/chromate equilibria, if the relevant reactions are treated as endothermic, heating shifts the system toward more yellow CrO4^2-, while cooling makes the orange color deeper.
+For dichromate/chromate equilibria, if the relevant reactions are treated as endothermic, heating shifts the system toward more yellow $\mathrm{CrO_4^{2-}}$, while cooling makes the orange color deeper.
 
 ## 6. Color and chromium species concentration
 
 Different chromium species have different electronic structures, so they absorb different wavelengths of light:
 
-- Cr2O7^2- mainly absorbs blue-violet light, so the solution appears orange.
-- CrO4^2- mainly absorbs blue-green light, so the solution appears yellow.
-- HCrO4- absorbs mainly in the ultraviolet range, so it is nearly colorless to the eye.
+- $\mathrm{Cr_2O_7^{2-}}$ mainly absorbs blue-violet light, so the solution appears orange.
+- $\mathrm{CrO_4^{2-}}$ mainly absorbs blue-green light, so the solution appears yellow.
+- $\mathrm{HCrO_4^-}$ absorbs strongly toward the ultraviolet region and contributes less visible color.
 
 The color depth is related to absorbing-species concentration. According to the Lambert-Beer law:
 
-```text
-A = epsilon * b * c
-```
+$$
+A=\varepsilon bc
+$$
 
-A is absorbance, epsilon is molar absorptivity, b is optical path length, and c is the absorbing species concentration. With multiple absorbing species, total absorbance is approximately the sum of the absorbance contributions from each species.
+$A$ is absorbance, $\varepsilon$ is molar absorptivity, $b$ is optical path length, and $c$ is the absorbing-species concentration. With multiple absorbing species, total absorbance is approximately the sum of the absorbance contributions from each species:
+
+$$
+A_{\mathrm{total}}=\sum_i \varepsilon_i b c_i
+$$
 
 This is why the current model predicts the visible-ion system by combining image color features with pH and equilibrium calculations.
 
 ## 7. Why total Cr(VI) is not always the best direct target
 
-The prepared total chromium(VI) concentration is not the direct cause of the measured color. The color is controlled by the equilibrium concentrations of Cr2O7^2-, HCrO4-, and CrO4^2-. Diluting or changing pH changes both total concentration and species distribution.
+The prepared total chromium(VI) concentration is not the direct cause of the measured color. The color is controlled by the equilibrium concentrations of $\mathrm{Cr_2O_7^{2-}}$, $\mathrm{HCrO_4^-}$, and $\mathrm{CrO_4^{2-}}$. Diluting or changing pH changes both total concentration and species distribution.
 
 Therefore, the deployed route is:
 
-```text
-image + pH
--> illumination standardization
--> color feature extraction
--> direct prediction of HCrO4- and Cr2O7^2-
--> calculation of CrO4^2- from pH and Ka2
--> estimated total Cr(VI)
-```
+$$
+\begin{aligned}
+\text{image}+\mathrm{pH}
+&\longrightarrow \text{illumination standardization}\\
+&\longrightarrow \text{color-feature extraction}\\
+&\longrightarrow \text{prediction of }\mathrm{HCrO_4^-}\text{ and }\mathrm{Cr_2O_7^{2-}}\\
+&\longrightarrow \text{calculation of }\mathrm{CrO_4^{2-}}\text{ using }K_{a,2}\\
+&\longrightarrow \text{estimated total Cr(VI)}
+\end{aligned}
+$$
 
 This route better matches the chemistry behind the visible color.
