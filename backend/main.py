@@ -188,7 +188,7 @@ async def root() -> Dict[str, Any]:
 async def health_check() -> HealthResponse:
     try:
         species_predictor = get_species_predictor()
-        model_loaded = species_predictor.model is not None
+        model_loaded = bool(species_predictor.models_by_ph)
         return HealthResponse(
             status="healthy" if model_loaded else "unhealthy",
             model_loaded=model_loaded,
