@@ -8,7 +8,7 @@ An intelligent solution concentration detection tool based on image color analys
 
 ---
 
-## 🌐 Live 
+## 🌐 Live Demo
 
 - **Frontend**: https://k2cr2o7-predictor.vercel.app
 - **API Docs**: https://k2cr2o7-api.onrender.com/docs
