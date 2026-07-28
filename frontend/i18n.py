@@ -143,7 +143,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "sim_title": "Cr(VI) 平衡交互模拟器",
         "sim_initial": "初始溶液：5 mM K₂Cr₂O₇，约 50 mL",
         "ph_meter": "pH 计",
-        "acid": "酸性",
+        "acid": "加酸",
         "basic": "碱性",
         "alkaline": "加碱",
         "ions": "离子浓度",
@@ -156,4 +156,3 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
 def text(lang: str, key: str) -> str:
     """Return a localized UI string."""
     return UI_TEXT.get(lang, UI_TEXT["en"]).get(key, key)
-

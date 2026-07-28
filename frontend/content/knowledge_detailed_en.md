@@ -30,11 +30,11 @@ $$
 
 ## 2　The Color Change Reactions of Potassium Dichromate Solution
 
-In a potassium dichromate solution, two major reversible reactions coexist: 1. The dimerization equilibrium between hydrogen chromate and dichromate ions; and 2. <a class="annotation-term" href="#note-en-s2">The ionization equilibrium of hydrogen chromate ions</a>*. Their chemical equations are:
+In a potassium dichromate solution, two major reversible reactions coexist: 1. The dimerization equilibrium between hydrogen chromate and dichromate ions; and 2. <a class="annotation-term" href="#note-en-s2">The ionization equilibrium of hydrogen chromate ions</a>. Their chemical equations are:
 
 $$
 \underset{\text{Dichromate}}{\color{#E87500}{\mathrm{Cr_2O_7^{2-}\ (orange)}}}
-+\underset{\text{Water}}{\mathrm{H_2O}}
++\mathrm{H_2O}
 \rightleftharpoons
 2\underset{\text{Hydrogen chromate}}{\mathrm{HCrO_4^-}}
 $$
@@ -42,7 +42,7 @@ $$
 $$
 \underset{\text{Hydrogen chromate}}{\mathrm{HCrO_4^-}}
 \rightleftharpoons
-\underset{\text{Hydrogen ion}}{\mathrm{H^+}}+
+\mathrm{H^+}+
 \underset{\text{Chromate}}{\color{#D4A000}{\mathrm{CrO_4^{2-}\ (yellow)}}}
 $$
 
@@ -52,7 +52,7 @@ Since the dichromate ion appears orange and the chromate ion appears yellow, we 
 
 ## 3　The Concept of Activity
 
-We know that the "concentration $c_\mathrm{B}$" of a substance B refers to the amount of substance of B per unit volume of the mixture. The equilibrium constant defined using concentrations in high school textbooks is termed the empirical equilibrium constant. The magnitude of an empirical equilibrium constant is influenced not only by temperature but also by ionic concentration. The statement we often use in high school chemistry—that "the magnitude of the equilibrium constant depends only on temperature"—implicitly assumes that the reaction system behaves as an ideal dilute solution. However, in real electrolyte solutions, complex electrostatic interactions exist between ions, as well as between ions and solvent (water) molecules. These interactions cause the <a class="annotation-term" href="#note-en-s3">thermodynamic</a>* behavior of species in the actual solution to deviate from the ideal state. The higher the ionic concentration and the greater the charge number, the more severe the deviation. To account for these effects, a correction must be applied to the ionic concentration:
+We know that the "concentration $c_\mathrm{B}$" of a substance B refers to the amount of substance of B per unit volume of the mixture. The equilibrium constant defined using concentrations in high school textbooks is termed the empirical equilibrium constant. The magnitude of an empirical equilibrium constant is influenced not only by temperature but also by ionic concentration. The statement we often use in high school chemistry—that "the magnitude of the equilibrium constant depends only on temperature"—implicitly assumes that the reaction system behaves as an ideal dilute solution. However, in real electrolyte solutions, complex electrostatic interactions exist between ions, as well as between ions and solvent (water) molecules. These interactions cause the <a class="annotation-term" href="#note-en-s3">thermodynamic</a> behavior of species in the actual solution to deviate from the ideal state. The higher the ionic concentration and the greater the charge number, the more severe the deviation. To account for these effects, a correction must be applied to the ionic concentration:
 
 $$
 a_\mathrm{B}=\gamma_\mathrm{B}\frac{c_\mathrm{B}}{c^\Theta}
@@ -80,7 +80,7 @@ This expression is analogous in form to the concentration constant $K$. Accurate
 
 ## 4　The Direction and Extent of Chemical Reactions
 
-High school textbooks teach us that by comparing the reaction quotient $Q$ with the equilibrium constant $K$, we can determine the direction of a chemical reaction. Furthermore, <a class="annotation-term" href="#note-en-s4">under given conditions</a>*, comparing the Gibbs free energy change per mole of reaction, $\Delta G$, with zero allows us to judge whether a reaction can occur spontaneously. These two perspectives are connected thermodynamically through the van 't Hoff reaction isotherm.
+High school textbooks teach us that by comparing the reaction quotient $Q$ with the equilibrium constant $K$, we can determine the direction of a chemical reaction. Furthermore, <a class="annotation-term" href="#note-en-s4">under given conditions</a>, comparing the Gibbs free energy change per mole of reaction, $\Delta G$, with zero allows us to judge whether a reaction can occur spontaneously. These two perspectives are connected thermodynamically through the van 't Hoff reaction isotherm.
 
 According to the reaction isotherm:
 
@@ -140,7 +140,7 @@ $$
 =\frac{\Delta_\mathrm rH_\mathrm m^\Theta}{RT^2}
 $$
 
-This equation is the <a class="annotation-term" href="#note-en-s5">differential form</a>* of the van 't Hoff equation in chemical equilibrium, where $\Delta_\mathrm rH_\mathrm m^\Theta$ is the standard molar reaction enthalpy change (with all species in their standard states). It is evident that for an endothermic reaction, $\Delta_\mathrm rH_\mathrm m^\Theta>0$, and $\Delta\ln K^\Theta/\Delta T>0$, meaning $K^\Theta$ increases with temperature, favoring the forward reaction. For an exothermic reaction, $\Delta_\mathrm rH_\mathrm m^\Theta<0$, and $\Delta\ln K^\Theta/\Delta T<0$, so $K^\Theta$ decreases with temperature, which is unfavorable for the forward reaction.
+This equation is the <a class="annotation-term" href="#note-en-s5">differential form</a> of the van 't Hoff equation in chemical equilibrium, where $\Delta_\mathrm rH_\mathrm m^\Theta$ is the standard molar reaction enthalpy change (with all species in their standard states). It is evident that for an endothermic reaction, $\Delta_\mathrm rH_\mathrm m^\Theta>0$, and $\Delta\ln K^\Theta/\Delta T>0$, meaning $K^\Theta$ increases with temperature, favoring the forward reaction. For an exothermic reaction, $\Delta_\mathrm rH_\mathrm m^\Theta<0$, and $\Delta\ln K^\Theta/\Delta T<0$, so $K^\Theta$ decreases with temperature, which is unfavorable for the forward reaction.
 
 <div class="thought-card">
   <div class="thought-title">Think 2:</div>
@@ -175,7 +175,7 @@ Therefore, for a given incident light, the concentration of the various chromium
   <details>
     <summary><span class="answer-show">Show answer</span><span class="answer-hide">Hide answer</span></summary>
     <div class="thought-answer">
-      Not necessarily. The Beer-Lambert law, which states a direct proportionality between absorbance and concentration, applies strictly to a single absorbing species. The "concentration" in this context refers to the actual equilibrium concentration of that absorbing species, not the total concentration prepared. When a potassium dichromate solution is diluted, the total ion concentration of the system decreases. For the equilibrium Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> + H<sub>2</sub>O ⇌ 2HCrO<sub>4</sub><sup>−</sup>, Le Châtelier's principle dictates that the equilibrium shifts to the side with more ions, i.e., to the right (the reaction HCrO<sub>4</sub><sup>−</sup> ⇌ H<sup>+</sup> + CrO<sub>4</sub><sup>2−</sup> also shifts rightward concurrently). On the one hand, the concentration of Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> decreases further from the simple c/2 value. On the other hand, the contributions to absorbance from the generated HCrO<sub>4</sub><sup>−</sup> and CrO<sub>4</sub><sup>2−</sup> are often different from that of Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup>. Consequently, the measured total absorbance of the solution is not linearly related to the total chromium concentration; rather, it is <a class="annotation-term" href="#note-en-s6">governed by the interplay of the two coupled equilibria</a>.*
+      Not necessarily. The Beer-Lambert law, which states a direct proportionality between absorbance and concentration, applies strictly to a single absorbing species. The "concentration" in this context refers to the actual equilibrium concentration of that absorbing species, not the total concentration prepared. When a potassium dichromate solution is diluted, the total ion concentration of the system decreases. For the equilibrium Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> + H<sub>2</sub>O ⇌ 2HCrO<sub>4</sub><sup>−</sup>, Le Châtelier's principle dictates that the equilibrium shifts to the side with more ions, i.e., to the right (the reaction HCrO<sub>4</sub><sup>−</sup> ⇌ H<sup>+</sup> + CrO<sub>4</sub><sup>2−</sup> also shifts rightward concurrently). On the one hand, the concentration of Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> decreases further from the simple c/2 value. On the other hand, the contributions to absorbance from the generated HCrO<sub>4</sub><sup>−</sup> and CrO<sub>4</sub><sup>2−</sup> are often different from that of Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup>. Consequently, the measured total absorbance of the solution is not linearly related to the total chromium concentration; rather, it is <a class="annotation-term" href="#note-en-s6">governed by the interplay of the two coupled equilibria</a>.
     </div>
   </details>
 </div>

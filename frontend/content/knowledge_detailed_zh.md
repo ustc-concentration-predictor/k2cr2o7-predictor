@@ -30,11 +30,11 @@ $$
 
 ## 2　重铬酸钾溶液的变色反应
 
-重铬酸钾溶液中主要存在两大可逆反应：1. 氢铬酸根与重铬酸根的二聚平衡；2. <a class="annotation-term" href="#note-zh-s2">氢铬酸根的电离平衡</a>*。其化学反应式为：
+重铬酸钾溶液中主要存在两大可逆反应：1. 氢铬酸根与重铬酸根的二聚平衡；2. <a class="annotation-term" href="#note-zh-s2">氢铬酸根的电离平衡</a>。其化学反应式为：
 
 $$
 \underset{\text{重铬酸根}}{\color{#E87500}{\mathrm{Cr_2O_7^{2-}\ （橙色）}}}
-+\underset{\text{水}}{\mathrm{H_2O}}
++\mathrm{H_2O}
 \rightleftharpoons
 2\underset{\text{氢铬酸根}}{\mathrm{HCrO_4^-}}
 $$
@@ -42,7 +42,7 @@ $$
 $$
 \underset{\text{氢铬酸根}}{\mathrm{HCrO_4^-}}
 \rightleftharpoons
-\underset{\text{氢离子}}{\mathrm{H^+}}+
+\mathrm{H^+}+
 \underset{\text{铬酸根}}{\color{#D4A000}{\mathrm{CrO_4^{2-}\ （黄色）}}}
 $$
 
@@ -52,7 +52,7 @@ $$
 
 ## 3　活度的概念
 
-我们知道，“B 的浓度 $c_\mathrm{B}$”指的是单位体积混合物中物质 B 的物质的量，高中教材中通过浓度定义的平衡常数为“经验平衡常数”。经验平衡常数的大小不仅受温度影响，还会受到离子浓度的影响。我们在高中的知识体系中认为“平衡常数的大小只与温度有关”，蕴含着反应体系为理想稀溶液的假设。然而，在实际电解质溶液中，离子与离子、离子与溶剂（水分子）间存在复杂的静电作用，使得实际溶液中物质的<a class="annotation-term" href="#note-zh-s3">热力学</a>*行为偏离理想状态，离子浓度越高、电荷数越大，影响越严重。为了克服这种影响，需要对离子浓度进行修正：
+我们知道，“B 的浓度 $c_\mathrm{B}$”指的是单位体积混合物中物质 B 的物质的量，高中教材中通过浓度定义的平衡常数为“经验平衡常数”。经验平衡常数的大小不仅受温度影响，还会受到离子浓度的影响。我们在高中的知识体系中认为“平衡常数的大小只与温度有关”，蕴含着反应体系为理想稀溶液的假设。然而，在实际电解质溶液中，离子与离子、离子与溶剂（水分子）间存在复杂的静电作用，使得实际溶液中物质的<a class="annotation-term" href="#note-zh-s3">热力学</a>行为偏离理想状态，离子浓度越高、电荷数越大，影响越严重。为了克服这种影响，需要对离子浓度进行修正：
 
 $$
 a_\mathrm{B}=\gamma_\mathrm{B}\frac{c_\mathrm{B}}{c^\Theta}
@@ -80,7 +80,7 @@ $$
 
 ## 4　化学反应的方向与限度
 
-高中教材告诉我们，通过比较浓度商 $Q$ 与反应平衡常数 $K$ 的相对大小，就可以判断化学反应的正逆方向，而<a class="annotation-term" href="#note-zh-s4">一定条件下</a>*每摩尔化学反应的吉布斯自由能变 $\Delta G$ 与 0 的相对大小又可以判断反应是否能自发进行。二者可以通过化学反应等温式搭建热力学上的桥梁。
+高中教材告诉我们，通过比较浓度商 $Q$ 与反应平衡常数 $K$ 的相对大小，就可以判断化学反应的正逆方向，而<a class="annotation-term" href="#note-zh-s4">一定条件下</a>每摩尔化学反应的吉布斯自由能变 $\Delta G$ 与 0 的相对大小又可以判断反应是否能自发进行。二者可以通过化学反应等温式搭建热力学上的桥梁。
 
 根据化学反应等温式
 
@@ -137,7 +137,7 @@ $$
 =\frac{\Delta_\mathrm rH_\mathrm m^\Theta}{RT^2}
 $$
 
-该式称为化学平衡中的范特霍夫公式的<a class="annotation-term" href="#note-zh-s5">微分式</a>*，其中 $\Delta_\mathrm rH_\mathrm m^\Theta$ 是各物质均处于标准态时的摩尔反应焓变值。可见，对于吸热反应，$\Delta_\mathrm rH_\mathrm m^\Theta>0$，$\Delta\ln K^\Theta/\Delta T>0$，即 $K^\Theta$ 随温度的升高而增大，升温对正向反应有利。对于放热反应，$\Delta_\mathrm rH_\mathrm m^\Theta<0$，$\Delta\ln K^\Theta/\Delta T<0$，即 $K^\Theta$ 随温度的升高而减小，升温对正向反应不利。
+该式称为化学平衡中的范特霍夫公式的<a class="annotation-term" href="#note-zh-s5">微分式</a>，其中 $\Delta_\mathrm rH_\mathrm m^\Theta$ 是各物质均处于标准态时的摩尔反应焓变值。可见，对于吸热反应，$\Delta_\mathrm rH_\mathrm m^\Theta>0$，$\Delta\ln K^\Theta/\Delta T>0$，即 $K^\Theta$ 随温度的升高而增大，升温对正向反应有利。对于放热反应，$\Delta_\mathrm rH_\mathrm m^\Theta<0$，$\Delta\ln K^\Theta/\Delta T<0$，即 $K^\Theta$ 随温度的升高而减小，升温对正向反应不利。
 
 <div class="thought-card">
   <div class="thought-title">思考2：</div>
@@ -172,7 +172,7 @@ $$
   <details>
     <summary><span class="answer-show">显示答案</span><span class="answer-hide">隐藏答案</span></summary>
     <div class="thought-answer">
-      并不是。朗伯-比尔定律描述的吸光度与物质浓度的正比关系仅仅针对单一吸光物质，其“浓度”指吸光物种的实际平衡浓度，而非配制的总浓度。当对重铬酸钾溶液进行稀释时，针对反应 Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> + H<sub>2</sub>O ⇌ 2HCrO<sub>4</sub><sup>−</sup>，体系总离子浓度降低，根据勒夏特列原理，平衡向总离子浓度升高的方向移动，即平衡右移（反应 HCrO<sub>4</sub><sup>−</sup> ⇌ H<sup>+</sup> + CrO<sub>4</sub><sup>2−</sup> 也同时正向移动）。一方面，Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> 浓度会在 c/2 的基础上进一步降低；另一方面，生成的 HCrO<sub>4</sub><sup>−</sup> 与 CrO<sub>4</sub><sup>2−</sup> 对吸光度的贡献往往与 Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> 不同。因此，我们所测量的溶液总吸光度与总 Cr 浓度之间并不是简单的线性关系，而是<a class="annotation-term" href="#note-zh-s6">由两步平衡共同决定的</a>*。
+      并不是。朗伯-比尔定律描述的吸光度与物质浓度的正比关系仅仅针对单一吸光物质，其“浓度”指吸光物种的实际平衡浓度，而非配制的总浓度。当对重铬酸钾溶液进行稀释时，针对反应 Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> + H<sub>2</sub>O ⇌ 2HCrO<sub>4</sub><sup>−</sup>，体系总离子浓度降低，根据勒夏特列原理，平衡向总离子浓度升高的方向移动，即平衡右移（反应 HCrO<sub>4</sub><sup>−</sup> ⇌ H<sup>+</sup> + CrO<sub>4</sub><sup>2−</sup> 也同时正向移动）。一方面，Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> 浓度会在 c/2 的基础上进一步降低；另一方面，生成的 HCrO<sub>4</sub><sup>−</sup> 与 CrO<sub>4</sub><sup>2−</sup> 对吸光度的贡献往往与 Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> 不同。因此，我们所测量的溶液总吸光度与总 Cr 浓度之间并不是简单的线性关系，而是<a class="annotation-term" href="#note-zh-s6">由两步平衡共同决定的</a>。
     </div>
   </details>
 </div>

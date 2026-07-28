@@ -152,6 +152,13 @@ st.markdown(
       .intro-action-spacer {
         height: 1.25rem;
       }
+      .st-key-intro_actions button,
+      .st-key-intro_actions button p {
+        font-size: 1.2rem !important;
+      }
+      .st-key-intro_actions button {
+        min-height: 3rem;
+      }
       .annotation-term {
         color: #1769aa !important;
         text-decoration: underline !important;
@@ -1014,20 +1021,21 @@ def render_introduction() -> None:
             '<div class="intro-action-spacer" aria-hidden="true"></div>',
             unsafe_allow_html=True,
         )
-        left, right = st.columns(2)
-        left.button(
-            f"💬 {text(lang, 'ask_more')}",
-            use_container_width=True,
-            on_click=set_module,
-            args=("query",),
-        )
-        right.button(
-            f"📷 {text(lang, 'start_prediction')}",
-            use_container_width=True,
-            type="primary",
-            on_click=set_module,
-            args=("prediction",),
-        )
+        with st.container(key="intro_actions"):
+            left, right = st.columns(2)
+            left.button(
+                f"💬 {text(lang, 'ask_more')}",
+                use_container_width=True,
+                on_click=set_module,
+                args=("query",),
+            )
+            right.button(
+                f"📷 {text(lang, 'start_prediction')}",
+                use_container_width=True,
+                type="primary",
+                on_click=set_module,
+                args=("prediction",),
+            )
         st.markdown(
             '<div class="intro-action-spacer" aria-hidden="true"></div>',
             unsafe_allow_html=True,
