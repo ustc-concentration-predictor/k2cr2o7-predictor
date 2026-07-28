@@ -30,17 +30,19 @@ $$
 
 对应的化学反应式为：
 
-<div class="equilibrium-equation">
-  <span class="species"><span class="formula dichromate">Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup>（橙色）</span><span class="species-name">重铬酸根</span></span>
-  <span>+ H<sub>2</sub>O ⇌ 2</span>
-  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">氢铬酸根</span></span>
-</div>
+$$
+\underset{\text{重铬酸根}}{\color{#E87500}{\mathrm{Cr_2O_7^{2-}\ （橙色）}}}
++\mathrm{H_2O}
+\rightleftharpoons
+2\underset{\text{氢铬酸根}}{\mathrm{HCrO_4^-}}
+$$
 
-<div class="equilibrium-equation">
-  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">氢铬酸根</span></span>
-  <span>⇌ H<sup>+</sup> +</span>
-  <span class="species"><span class="formula chromate">CrO<sub>4</sub><sup>2−</sup>（黄色）</span><span class="species-name">铬酸根</span></span>
-</div>
+$$
+\underset{\text{氢铬酸根}}{\mathrm{HCrO_4^-}}
+\rightleftharpoons
+\mathrm{H^+}+
+\underset{\text{铬酸根}}{\color{#D4A000}{\mathrm{CrO_4^{2-}\ （黄色）}}}
+$$
 
 重铬酸根显橙色，铬酸根显黄色。因此，我们可以根据溶液颜色的变化判断物质浓度的相对大小，进而分析化学平衡的移动。
 

@@ -102,48 +102,6 @@ st.markdown(
       [data-testid="stMarkdownContainer"] h2 {
         margin-top: 3.2rem;
       }
-      .equilibrium-equation {
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        gap: .42rem;
-        margin: 1.55rem auto 1.9rem;
-        font-family: "Times New Roman", "Cambria Math", serif;
-        font-size: clamp(1.18rem, 2vw, 1.55rem);
-        line-height: 1.15;
-        text-align: center;
-      }
-      .equilibrium-equation .species {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: max-content;
-      }
-      .equilibrium-equation .species-name {
-        margin-top: .32rem;
-        color: #475467;
-        font-family: "Segoe UI", sans-serif;
-        font-size: .76rem;
-        font-weight: 600;
-        line-height: 1.2;
-      }
-      .equilibrium-equation .dichromate {
-        color: #e87500;
-        font-weight: 700;
-      }
-      .equilibrium-equation .chromate {
-        color: #d4a000;
-        font-weight: 700;
-      }
-      @media (max-width: 640px) {
-        .equilibrium-equation {
-          gap: .25rem;
-          font-size: 1.02rem;
-        }
-        .equilibrium-equation .species-name {
-          font-size: .66rem;
-        }
-      }
       .thought-card {
         margin: 1.25rem 0;
         padding: 1rem 1.1rem;
