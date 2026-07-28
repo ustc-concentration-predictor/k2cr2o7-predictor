@@ -30,14 +30,17 @@ Two major reversible reactions coexist in potassium dichromate solution:
 
 Their chemical equations are:
 
-$$
-\mathrm{Cr_2O_7^{2-}\ (orange)+H_2O
-\rightleftharpoons 2HCrO_4^-}
-$$
+<div class="equilibrium-equation">
+  <span class="species"><span class="formula dichromate">Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> (orange)</span><span class="species-name">Dichromate</span></span>
+  <span>+ H<sub>2</sub>O ⇌ 2</span>
+  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">Hydrogen chromate</span></span>
+</div>
 
-$$
-\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}\ (yellow)}
-$$
+<div class="equilibrium-equation">
+  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">Hydrogen chromate</span></span>
+  <span>⇌ H<sup>+</sup> +</span>
+  <span class="species"><span class="formula chromate">CrO<sub>4</sub><sup>2−</sup> (yellow)</span><span class="species-name">Chromate</span></span>
+</div>
 
 Because dichromate is orange and chromate is yellow, changes in solution color reveal changes in the relative concentrations of these species and help us analyze equilibrium shifts.
 

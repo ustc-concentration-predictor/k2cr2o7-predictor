@@ -99,6 +99,51 @@ st.markdown(
         border-radius: 0 7px 7px 0;
         font-style: italic;
       }
+      [data-testid="stMarkdownContainer"] h2 {
+        margin-top: 3.2rem;
+      }
+      .equilibrium-equation {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: .42rem;
+        margin: 1.55rem auto 1.9rem;
+        font-family: "Times New Roman", "Cambria Math", serif;
+        font-size: clamp(1.18rem, 2vw, 1.55rem);
+        line-height: 1.15;
+        text-align: center;
+      }
+      .equilibrium-equation .species {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: max-content;
+      }
+      .equilibrium-equation .species-name {
+        margin-top: .32rem;
+        color: #475467;
+        font-family: "Segoe UI", sans-serif;
+        font-size: .76rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .equilibrium-equation .dichromate {
+        color: #e87500;
+        font-weight: 700;
+      }
+      .equilibrium-equation .chromate {
+        color: #d4a000;
+        font-weight: 700;
+      }
+      @media (max-width: 640px) {
+        .equilibrium-equation {
+          gap: .25rem;
+          font-size: 1.02rem;
+        }
+        .equilibrium-equation .species-name {
+          font-size: .66rem;
+        }
+      }
       .thought-card {
         margin: 1.25rem 0;
         padding: 1rem 1.1rem;
@@ -742,8 +787,8 @@ def render_ph_equilibrium_simulator(lang: str) -> None:
         }}
         .ion-label {{
           position: absolute;
-          min-width: 106px;
-          font-size: 12px;
+          min-width: 128px;
+          font-size: 18px;
           line-height: 1.22;
           color: #101828;
           background: rgba(255,255,255,.84);
@@ -754,7 +799,7 @@ def render_ph_equilibrium_simulator(lang: str) -> None:
         }}
         .ion-label b {{
           display: block;
-          font-size: 13px;
+          font-size: 19.5px;
           margin-bottom: 2px;
         }}
         .ion-label.h {{ left: 183px; top: 133px; }}
@@ -989,7 +1034,7 @@ def render_introduction() -> None:
     if introduction_file.exists():
         st.markdown(
             introduction_file.read_text(encoding="utf-8"),
-            unsafe_allow_html=intro_version == "detailed",
+            unsafe_allow_html=True,
         )
     else:
         st.warning(text(lang, "intro_missing"))

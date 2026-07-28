@@ -23,13 +23,17 @@ At equilibrium, $Q$ becomes the equilibrium constant, $K$. If an external factor
 
 In potassium dichromate solution, the most important chromium(VI) equilibria are:
 
-$$
-\mathrm{Cr_2O_7^{2-}+H_2O \rightleftharpoons 2HCrO_4^-}
-$$
+<div class="equilibrium-equation">
+  <span class="species"><span class="formula dichromate">Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup></span><span class="species-name">Dichromate</span></span>
+  <span>+ H<sub>2</sub>O ⇌ 2</span>
+  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">Hydrogen chromate</span></span>
+</div>
 
-$$
-\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}}
-$$
+<div class="equilibrium-equation">
+  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">Hydrogen chromate</span></span>
+  <span>⇌ H<sup>+</sup> +</span>
+  <span class="species"><span class="formula chromate">CrO<sub>4</sub><sup>2−</sup></span><span class="species-name">Chromate</span></span>
+</div>
 
 $\mathrm{Cr_2O_7^{2-}}$ is orange, $\mathrm{CrO_4^{2-}}$ is yellow, and $\mathrm{HCrO_4^-}$ is weakly colored in the visible range. Therefore, solution color reflects the relative distribution of these chromium species.
 

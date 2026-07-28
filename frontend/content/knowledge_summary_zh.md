@@ -23,13 +23,17 @@ $$
 
 重铬酸钾溶液中最重要的铬(VI)平衡包括：
 
-$$
-\mathrm{Cr_2O_7^{2-}+H_2O \rightleftharpoons 2HCrO_4^-}
-$$
+<div class="equilibrium-equation">
+  <span class="species"><span class="formula dichromate">Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup></span><span class="species-name">重铬酸根</span></span>
+  <span>+ H<sub>2</sub>O ⇌ 2</span>
+  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">氢铬酸根</span></span>
+</div>
 
-$$
-\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}}
-$$
+<div class="equilibrium-equation">
+  <span class="species"><span class="formula">HCrO<sub>4</sub><sup>−</sup></span><span class="species-name">氢铬酸根</span></span>
+  <span>⇌ H<sup>+</sup> +</span>
+  <span class="species"><span class="formula chromate">CrO<sub>4</sub><sup>2−</sup></span><span class="species-name">铬酸根</span></span>
+</div>
 
 $\mathrm{Cr_2O_7^{2-}}$ 呈橙色，$\mathrm{CrO_4^{2-}}$ 呈黄色，$\mathrm{HCrO_4^-}$ 在可见光区颜色较弱。因此，溶液颜色能够反映这些铬物种的相对分布。
 
