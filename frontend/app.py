@@ -132,6 +132,15 @@ st.markdown(
       .thought-card summary::-webkit-details-marker {
         display: none;
       }
+      .thought-card .answer-hide {
+        display: none;
+      }
+      .thought-card details[open] .answer-show {
+        display: none;
+      }
+      .thought-card details[open] .answer-hide {
+        display: inline;
+      }
       .thought-answer {
         margin-top: .85rem;
         padding: .85rem 1rem;
@@ -139,6 +148,9 @@ st.markdown(
         background: #ffffff;
         border: 1px solid #d0d5dd;
         border-radius: 7px;
+      }
+      .intro-action-spacer {
+        height: 1.25rem;
       }
       .annotation-term {
         color: #1769aa !important;
@@ -998,6 +1010,10 @@ def render_introduction() -> None:
         st.warning(text(lang, "intro_missing"))
 
     if intro_version == "detailed":
+        st.markdown(
+            '<div class="intro-action-spacer" aria-hidden="true"></div>',
+            unsafe_allow_html=True,
+        )
         left, right = st.columns(2)
         left.button(
             f"💬 {text(lang, 'ask_more')}",
@@ -1011,6 +1027,10 @@ def render_introduction() -> None:
             type="primary",
             on_click=set_module,
             args=("prediction",),
+        )
+        st.markdown(
+            '<div class="intro-action-spacer" aria-hidden="true"></div>',
+            unsafe_allow_html=True,
         )
 
     render_ph_equilibrium_simulator(lang)
