@@ -14,9 +14,11 @@ import streamlit.components.v1 as components
 from PIL import Image
 from streamlit_cropper import st_cropper
 
+from i18n import text
+
 
 st.set_page_config(
-    page_title="K₂Cr₂O₇ Species Predictor",
+    page_title="K₂Cr₂O₇ · 浓度预测 / Concentration Predictor",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -88,6 +90,106 @@ st.markdown(
       section[data-testid="stSidebar"] hr {
         border-color: #30434d;
       }
+      .transition-note {
+        margin: 1.15rem 0;
+        padding: .85rem 1rem;
+        color: #667085;
+        background: #f2f4f7;
+        border-left: 4px solid #98a2b3;
+        border-radius: 0 7px 7px 0;
+        font-style: italic;
+      }
+      .thought-card {
+        margin: 1.25rem 0;
+        padding: 1rem 1.1rem;
+        border: 1px solid #99d6cf;
+        border-radius: 10px;
+        background: #f5fffd;
+        box-shadow: 0 4px 14px rgba(20, 94, 86, .08);
+      }
+      .thought-title {
+        margin-bottom: .45rem;
+        color: #0f766e;
+        font-size: 1.02rem;
+        font-weight: 750;
+      }
+      .thought-card details {
+        margin-top: .75rem;
+      }
+      .thought-card summary {
+        display: inline-block;
+        padding: .42rem .8rem;
+        color: #ffffff;
+        background: #0f766e;
+        border-radius: 7px;
+        cursor: pointer;
+        font-weight: 650;
+        list-style: none;
+      }
+      .thought-card summary::-webkit-details-marker {
+        display: none;
+      }
+      .thought-answer {
+        margin-top: .85rem;
+        padding: .85rem 1rem;
+        color: #344054;
+        background: #ffffff;
+        border: 1px solid #d0d5dd;
+        border-radius: 7px;
+      }
+      .annotation-term {
+        color: #1769aa !important;
+        text-decoration: underline !important;
+        text-decoration-style: dotted !important;
+        text-underline-offset: 3px;
+        font-weight: 650;
+        cursor: pointer;
+      }
+      .annotation-modal {
+        position: fixed;
+        z-index: 999999;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        background: rgba(15, 23, 42, .58);
+      }
+      .annotation-modal:target {
+        display: flex;
+      }
+      .annotation-dialog {
+        position: relative;
+        width: min(620px, 92vw);
+        max-height: 76vh;
+        overflow-y: auto;
+        padding: 1.35rem 1.45rem;
+        color: #1d2939;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 22px 64px rgba(15, 23, 42, .32);
+      }
+      .annotation-dialog h4 {
+        margin: 0 2rem .7rem 0;
+        color: #0f766e;
+      }
+      .annotation-close {
+        position: absolute;
+        top: .72rem;
+        right: .82rem;
+        width: 2rem;
+        height: 2rem;
+        color: #475467 !important;
+        font-size: 1.65rem;
+        line-height: 1.8rem;
+        text-align: center;
+        text-decoration: none !important;
+        border-radius: 50%;
+      }
+      .annotation-close:hover {
+        color: #101828 !important;
+        background: #f2f4f7;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -95,7 +197,12 @@ st.markdown(
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 CONTENT_DIR = Path(__file__).parent / "content"
-INTRODUCTION_FILE = CONTENT_DIR / "knowledge_summary.md"
+INTRODUCTION_FILES = {
+    ("simple", "en"): CONTENT_DIR / "knowledge_summary.md",
+    ("simple", "zh"): CONTENT_DIR / "knowledge_summary_zh.md",
+    ("detailed", "en"): CONTENT_DIR / "knowledge_detailed_en.md",
+    ("detailed", "zh"): CONTENT_DIR / "knowledge_detailed_zh.md",
+}
 
 PH_COLOR_POINTS = [
     {"ph": 3.0, "rgb": [177.93, 136.34, 50.14]},
@@ -120,6 +227,9 @@ def init_state() -> None:
         "last_prediction": None,
         "query_messages": [],
         "analysis_messages": [],
+        "language": "en",
+        "intro_version": "simple",
+        "module": "introduction",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -144,6 +254,7 @@ def image_mimetype(filename: str) -> str:
 
 
 def predict(image_bytes: bytes, ph: float, filename: str) -> Dict[str, Any]:
+    lang = st.session_state.language
     try:
         files = {"image": (filename, image_bytes, image_mimetype(filename))}
         data = {"ph": ph}
@@ -159,7 +270,7 @@ def predict(image_bytes: bytes, ph: float, filename: str) -> Dict[str, Any]:
             detail = response.json().get("detail", response.text)
         except ValueError:
             detail = response.text or f"HTTP {response.status_code}"
-        return {"error": f"API Error ({response.status_code}): {detail}"}
+        return {"error": f"{text(lang, 'api_error')} ({response.status_code}): {detail}"}
     except requests.RequestException as exc:
         return {"error": str(exc)}
 
@@ -170,8 +281,12 @@ def ask_llm(
     mode: str,
     prediction_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    lang = st.session_state.language
+    language_instruction = (
+        "请始终使用中文回答。\n\n" if lang == "zh" else "Always answer in English.\n\n"
+    )
     payload = {
-        "prompt": prompt,
+        "prompt": language_instruction + prompt,
         "messages": messages,
         "mode": mode,
         "prediction_context": prediction_context or {},
@@ -184,9 +299,12 @@ def ask_llm(
             detail = response.json().get("detail", response.text)
         except ValueError:
             detail = response.text or f"HTTP {response.status_code}"
-        return {"reply": f"Chat API error ({response.status_code}): {detail}", "configured": False}
+        return {
+            "reply": f"{text(lang, 'chat_api_error')} ({response.status_code}): {detail}",
+            "configured": False,
+        }
     except requests.RequestException as exc:
-        return {"reply": f"Chat API unavailable: {exc}", "configured": False}
+        return {"reply": f"{text(lang, 'chat_unavailable')}: {exc}", "configured": False}
 
 
 def render_chat_panel(
@@ -196,31 +314,48 @@ def render_chat_panel(
     placeholder: str,
     prediction_context: Optional[Dict[str, Any]] = None,
 ) -> None:
+    lang = st.session_state.language
     st.subheader(title)
 
     messages = st.session_state[state_key]
     if not messages:
-        st.caption("大模型接口已预留，填入后端环境变量后即可使用。")
+        st.caption(text(lang, "llm_unconfigured"))
 
     for msg in messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
     with st.form(f"{state_key}_form", clear_on_submit=True):
-        prompt = st.text_area("Message", placeholder=placeholder, label_visibility="collapsed", height=110)
-        submitted = st.form_submit_button("Send")
+        prompt = st.text_area(
+            text(lang, "message"),
+            placeholder=placeholder,
+            label_visibility="collapsed",
+            height=110,
+        )
+        submitted = st.form_submit_button(text(lang, "send"))
 
     if submitted and prompt.strip():
         user_message = {"role": "user", "content": prompt.strip()}
         messages.append(user_message)
-        with st.spinner("Waiting for model response..."):
+        with st.spinner(text(lang, "waiting_model")):
             result = ask_llm(prompt.strip(), messages[:-1], mode, prediction_context)
         messages.append({"role": "assistant", "content": result.get("reply", "")})
         st.rerun()
 
 
-def render_ph_equilibrium_simulator() -> None:
+def render_ph_equilibrium_simulator(lang: str) -> None:
     color_points_js = PH_COLOR_POINTS
+    sim = {key: text(lang, key) for key in (
+        "sim_title",
+        "sim_initial",
+        "ph_meter",
+        "acid",
+        "basic",
+        "alkaline",
+        "ions",
+        "ph_electrode",
+        "sim_note",
+    )}
     html = f"""
     <div id="cr-sim-root">
       <style>
@@ -646,8 +781,8 @@ def render_ph_equilibrium_simulator() -> None:
       </style>
 
       <div class="sim-title">
-        <h3>Interactive Cr(VI) equilibrium simulator</h3>
-        <span>Initial solution: 5 mM K<sub>2</sub>Cr<sub>2</sub>O<sub>7</sub>, about 50 mL</span>
+        <h3>{sim['sim_title']}</h3>
+        <span>{sim['sim_initial']}</span>
       </div>
       <div class="sim-stage" style="--ph-pos: 46.15;">
         <svg class="cable-svg" viewBox="0 0 900 470" preserveAspectRatio="none" aria-hidden="true">
@@ -656,12 +791,12 @@ def render_ph_equilibrium_simulator() -> None:
         </svg>
         <div class="ph-panel">
           <div class="ph-meter">
-            <div class="ph-meter-title">pH meter</div>
+            <div class="ph-meter-title">{sim['ph_meter']}</div>
             <div class="ph-meter-value" id="phReadout">7.0</div>
           </div>
           <div class="ph-label">pH</div>
-          <div class="acid-basic acid">acid</div>
-          <div class="acid-basic basic">basic</div>
+          <div class="acid-basic acid">{sim['acid']}</div>
+          <div class="acid-basic basic">{sim['basic']}</div>
           <div class="ph-scale">
             <div class="ph-tick fourteen">14</div>
             <div class="ph-tick seven">7</div>
@@ -673,16 +808,16 @@ def render_ph_equilibrium_simulator() -> None:
           <div class="drop-controls">
             <button class="drop-button" id="acidBtn" type="button">
               <span class="pipette-icon"><span class="pipette-bulb"></span></span>
-              <span>acid</span>
+              <span>{sim['acid']}</span>
             </button>
             <button class="drop-button" id="baseBtn" type="button">
               <span class="pipette-icon"><span class="pipette-bulb"></span></span>
-              <span>alkaline</span>
+              <span>{sim['alkaline']}</span>
             </button>
           </div>
           <div class="drop" id="drop"></div>
           <div class="beaker-wrap">
-            <div class="probe" id="probe" title="pH electrode"><span class="probe-junction"></span></div>
+            <div class="probe" id="probe" title="{sim['ph_electrode']}"><span class="probe-junction"></span></div>
             <div class="beaker">
               <div class="solution" id="solution"></div>
             </div>
@@ -692,7 +827,7 @@ def render_ph_equilibrium_simulator() -> None:
         <div class="magnifier">
           <div class="handle"></div>
           <div class="lens">
-            <div class="ion-caption">ions</div>
+            <div class="ion-caption">{sim['ions']}</div>
             <div class="ion-orbit"></div>
             <div class="ion center">+</div>
             <div class="ion top">-</div>
@@ -705,7 +840,7 @@ def render_ph_equilibrium_simulator() -> None:
           </div>
         </div>
       </div>
-      <div class="range-note">pH is limited to 1.0-14.0. Solution color is visually enhanced from the 5 mM training colors.</div>
+      <div class="range-note">{sim['sim_note']}</div>
 
       <script>
         const colorPoints = {color_points_js};
@@ -841,22 +976,53 @@ def render_ph_equilibrium_simulator() -> None:
 
 
 def render_introduction() -> None:
-    st.title("Introduction")
-    if INTRODUCTION_FILE.exists():
-        st.markdown(INTRODUCTION_FILE.read_text(encoding="utf-8"))
+    lang = st.session_state.language
+    st.title(text(lang, "introduction"))
+    intro_version = st.radio(
+        text(lang, "introduction_version"),
+        ["simple", "detailed"],
+        horizontal=True,
+        format_func=lambda value: text(lang, value),
+        key="intro_version",
+    )
+    introduction_file = INTRODUCTION_FILES[(intro_version, lang)]
+    if introduction_file.exists():
+        st.markdown(
+            introduction_file.read_text(encoding="utf-8"),
+            unsafe_allow_html=intro_version == "detailed",
+        )
     else:
-        st.warning("Introduction content is missing.")
-    render_ph_equilibrium_simulator()
+        st.warning(text(lang, "intro_missing"))
+
+    if intro_version == "detailed":
+        left, right = st.columns(2)
+        left.button(
+            f"💬 {text(lang, 'ask_more')}",
+            use_container_width=True,
+            on_click=set_module,
+            args=("query",),
+        )
+        right.button(
+            f"📷 {text(lang, 'start_prediction')}",
+            use_container_width=True,
+            type="primary",
+            on_click=set_module,
+            args=("prediction",),
+        )
+
+    render_ph_equilibrium_simulator(lang)
 
 
 def render_query(api_ok: bool) -> None:
-    st.title("Query")
-    st.caption(f"Backend: {API_BASE_URL} · {'online' if api_ok else 'offline'}")
+    lang = st.session_state.language
+    st.title(text(lang, "query"))
+    status = text(lang, "online" if api_ok else "offline")
+    st.caption(f"{text(lang, 'backend')}: {API_BASE_URL} · {status}")
     render_chat_panel(
-        "General chemistry query",
+        text(lang, "general_query"),
         "query_messages",
         "query",
-        "Ask about dichromate equilibrium, experimental design, or model interpretation...",
+        text(lang, "query_placeholder"),
     )
 
 
@@ -872,7 +1038,36 @@ def save_crop_for_prediction(cropped: Image.Image, original_name: str) -> bytes:
     return image_buffer.getvalue()
 
 
+def localize_warning(warning: str, lang: str) -> str:
+    """Translate known backend model warnings for the Chinese UI."""
+    if lang != "zh":
+        return warning
+    if "outside the training range" in warning:
+        return (
+            warning.replace(" is outside the training range (", " 超出模型训练范围（")
+            .replace("); the prediction may be unreliable.", "），预测结果可能不可靠。")
+            .replace("-", "–")
+        )
+    if "was routed to the nearest trained pH submodel" in warning:
+        return warning.replace(
+            " was routed to the nearest trained pH submodel: ",
+            " 已路由至最接近的已训练 pH 子模型：",
+        )
+    if "mass-balance CrO4^2- estimate was negative" in warning:
+        return (
+            "物料衡算得到的 CrO₄²⁻ 为负值，显示时已截断为零；"
+            "这通常表示由差值计算得到的 CrO₄²⁻ 项存在放大的预测误差。"
+        )
+    if "At higher pH values" in warning:
+        return (
+            "在较高 pH 下，CrO₄²⁻ 由差值计算得到，"
+            "因此对直接预测物种的微小误差更加敏感。"
+        )
+    return warning
+
+
 def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
+    lang = st.session_state.language
     species = result.get("species_concentrations") or {}
     total_cr = float(species.get("estimated_total_cr_mM", result.get("concentration", 0.0)))
     hcro4 = float(species.get("HCrO4_mM", 0.0))
@@ -902,35 +1097,35 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         "features_used": result.get("features_used", {}),
     }
 
-    st.success("Prediction completed.")
+    st.success(text(lang, "prediction_completed"))
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("HCrO₄⁻", f"{hcro4:.4f} mM")
     c2.metric("Cr₂O₇²⁻", f"{cr2o7:.4f} mM")
     c3.metric("CrO₄²⁻", f"{cro4:.4f} mM")
-    c4.metric("Estimated total Cr(VI)", f"{total_cr:.4f} mM")
+    c4.metric(text(lang, "estimated_total"), f"{total_cr:.4f} mM")
 
     d1, d2, d3 = st.columns(3)
-    d1.metric("Confidence", f"{float(result.get('confidence', 0.0)):.1%}")
-    d2.metric("Mass-balance residual", f"{residual:.4f} mM")
+    d1.metric(text(lang, "confidence"), f"{float(result.get('confidence', 0.0)):.1%}")
+    d2.metric(text(lang, "mass_balance_residual"), f"{residual:.4f} mM")
     d3.metric("pH", f"{ph:.1f}")
 
     for warning in result.get("warnings", []):
-        st.warning(warning)
+        st.warning(localize_warning(warning, lang))
 
 
 def render_model_prediction(api_ok: bool) -> None:
-    st.title("Model Prediction")
-    st.caption(
-        "Workflow: upload an ROI image and pH, standardize illumination, extract "
-        "the Lab a feature, predict total Cr(VI), HCrO₄⁻, and Cr₂O₇²⁻, then "
-        "compute CrO₄²⁻ by mass balance."
-    )
+    lang = st.session_state.language
+    st.title(text(lang, "prediction"))
+    st.caption(text(lang, "workflow"))
 
     left, right = st.columns([1, 1])
 
     with left:
-        st.subheader("Sample image")
-        uploaded = st.file_uploader("Select photo", type=["jpg", "jpeg", "png", "tif", "tiff"])
+        st.subheader(text(lang, "sample_image"))
+        uploaded = st.file_uploader(
+            text(lang, "select_photo"),
+            type=["jpg", "jpeg", "png", "tif", "tiff"],
+        )
         if uploaded:
             image = Image.open(uploaded)
             st.session_state.original_image = image
@@ -944,11 +1139,11 @@ def render_model_prediction(api_ok: bool) -> None:
             st.session_state.roi_selected = True
 
         ph = st.slider("pH", 3.0, 8.0, 6.0, 0.1)
-        st.caption("The deployed model is trained for pH 3–8. At pH 7–8, CrO₄²⁻ uncertainty may be amplified.")
+        st.caption(text(lang, "training_note"))
 
         can_predict = bool(uploaded and api_ok and st.session_state.cropped_image)
-        if st.button("Predict", disabled=not can_predict, type="primary"):
-            with st.spinner("Analyzing ROI image..."):
+        if st.button(text(lang, "predict"), disabled=not can_predict, type="primary"):
+            with st.spinner(text(lang, "analyzing")):
                 image_bytes = save_crop_for_prediction(st.session_state.cropped_image, uploaded.name)
                 result = predict(image_bytes, ph, uploaded.name)
             if "error" in result:
@@ -957,16 +1152,20 @@ def render_model_prediction(api_ok: bool) -> None:
                 render_prediction_results(result, ph)
 
     with right:
-        st.subheader("ROI preview")
+        st.subheader(text(lang, "roi_preview"))
         if st.session_state.cropped_image:
-            st.image(st.session_state.cropped_image, caption="Selected ROI", use_container_width=True)
+            st.image(
+                st.session_state.cropped_image,
+                caption=text(lang, "selected_roi"),
+                use_container_width=True,
+            )
         elif uploaded:
-            st.info("Draw a box around the cuvette region.")
+            st.info(text(lang, "draw_roi"))
         else:
-            st.info("Upload a photo, then select the cuvette region.")
+            st.info(text(lang, "upload_first"))
 
         st.markdown("---")
-        st.subheader("Equilibrium basis")
+        st.subheader(text(lang, "equilibrium_basis"))
         st.latex(r"\mathrm{Cr_2O_7^{2-} + H_2O \rightleftharpoons 2HCrO_4^-}")
         st.latex(r"\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}}")
         st.latex(r"[\mathrm{CrO_4^{2-}}] = K_{a,2}\frac{[\mathrm{HCrO_4^-}]}{[\mathrm{H^+}]}")
@@ -977,32 +1176,45 @@ def render_model_prediction(api_ok: bool) -> None:
 
     st.markdown("---")
     render_chat_panel(
-        "Result analysis assistant",
+        text(lang, "result_assistant"),
         "analysis_messages",
         "prediction_analysis",
-        "Ask the model to summarize this result, discuss reliability, or suggest experimental checks...",
+        text(lang, "result_placeholder"),
         st.session_state.last_prediction,
     )
+
+
+def set_module(module: str) -> None:
+    st.session_state.module = module
 
 
 def render_sidebar(api_ok: bool) -> str:
     with st.sidebar:
         st.title("K₂Cr₂O₇")
-        st.caption("Chromium(VI) species predictor")
+        st.radio(
+            "Language / 语言",
+            ["en", "zh"],
+            format_func=lambda value: "Eng" if value == "en" else "中文",
+            horizontal=True,
+            key="language",
+        )
+        lang = st.session_state.language
+        st.caption(text(lang, "sidebar_subtitle"))
         if api_ok:
-            st.success("Backend online")
+            st.success(text(lang, "backend_online"))
         else:
-            st.error("Backend offline")
+            st.error(text(lang, "backend_offline"))
 
         module = st.radio(
-            "Module",
-            ["Introduction", "Query", "Model Prediction"],
-            index=0,
+            text(lang, "module"),
+            ["introduction", "query", "prediction"],
+            format_func=lambda value: text(lang, f"module_{value}"),
+            key="module",
         )
 
         if st.session_state.history:
             st.markdown("---")
-            st.subheader("Recent predictions")
+            st.subheader(text(lang, "recent_predictions"))
             for item in st.session_state.history[-5:]:
                 st.write(
                     f"{item['time']} · pH {item['ph']:.1f} · "
@@ -1016,15 +1228,15 @@ def main() -> None:
     api_ok = check_api()
     module = render_sidebar(api_ok)
 
-    if module == "Introduction":
+    if module == "introduction":
         render_introduction()
-    elif module == "Query":
+    elif module == "query":
         render_query(api_ok)
     else:
         render_model_prediction(api_ok)
 
     st.markdown("---")
-    st.caption("K₂Cr₂O₇ Prediction System · ML species prediction with equilibrium calculation")
+    st.caption(text(st.session_state.language, "footer"))
 
 
 if __name__ == "__main__":
