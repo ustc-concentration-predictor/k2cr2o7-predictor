@@ -27,11 +27,11 @@ $$
 \underset{\text{重铬酸根}}{\color{#E87500}{\mathrm{Cr_2O_7^{2-}}}}
 +\mathrm{H_2O}
 \rightleftharpoons
-2\underset{\text{氢铬酸根}}{\mathrm{HCrO_4^-}}
+2\underset{\text{铬酸氢根}}{\mathrm{HCrO_4^-}}
 $$
 
 $$
-\underset{\text{氢铬酸根}}{\mathrm{HCrO_4^-}}
+\underset{\text{铬酸氢根}}{\mathrm{HCrO_4^-}}
 \rightleftharpoons
 \mathrm{H^+}+
 \underset{\text{铬酸根}}{\color{#D4A000}{\mathrm{CrO_4^{2-}}}}
