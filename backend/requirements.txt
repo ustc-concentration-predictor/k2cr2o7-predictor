@@ -6,7 +6,7 @@ uvicorn
 python-multipart
 pydantic
 opencv-python-headless
-scikit-learn
+scikit-learn==1.8.0
 joblib
 Pillow
 requests
