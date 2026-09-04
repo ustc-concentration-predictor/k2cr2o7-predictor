@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlsplit
 
 import requests
 import streamlit as st
@@ -233,7 +234,7 @@ def setting(name: str, default: str = "") -> str:
     return value
 
 
-API_BASE_URL = setting("API_BASE_URL", "http://localhost:8000").rstrip("/")
+API_BASE_URL = setting("API_BASE_URL").rstrip("/")
 CONTENT_DIR = Path(__file__).parent / "content"
 INTRODUCTION_FILES = {
     ("simple", "en"): CONTENT_DIR / "knowledge_summary.md",
@@ -276,6 +277,8 @@ def init_state() -> None:
 
 
 def check_api() -> bool:
+    if not API_BASE_URL:
+        return False
     try:
         response = requests.get(f"{API_BASE_URL}/health", timeout=10)
         return response.status_code == 200 and response.json().get("model_loaded", False)
@@ -341,6 +344,13 @@ def ask_llm(
                          setting("LLM_BASE_URL", "https://api.deepseek.com"),
                          setting("LLM_MODEL", "deepseek-v4-flash"),
                          learning_context=learning_context, language=lang)
+    if not API_BASE_URL:
+        return {
+            "reply": ("No LLM_API_KEY or API_BASE_URL was found. Add LLM_API_KEY to this Streamlit app's Secrets for direct DeepSeek chat; add API_BASE_URL for the prediction backend. Use top-level TOML keys."
+                      if lang == "en" else
+                      "当前应用未读到 LLM_API_KEY 和 API_BASE_URL。请在此 Streamlit 应用的 Secrets 顶层填写 LLM_API_KEY 以启用 DeepSeek 问答，并填写 API_BASE_URL 连接预测后端。"),
+            "configured": False, "error": True, "error_code": "CHAT_CONFIG_MISSING",
+        }
     payload = {
         "prompt": prompt,
         "messages": messages,
@@ -361,8 +371,18 @@ def ask_llm(
             "reply": f"{text(lang, 'chat_api_error')} ({response.status_code}): {detail}",
             "configured": False,
         }
-    except requests.RequestException as exc:
-        return {"reply": f"{text(lang, 'chat_unavailable')}: {exc}", "configured": False}
+    except requests.RequestException:
+        local = urlsplit(API_BASE_URL).hostname in ("localhost", "127.0.0.1", "::1")
+        if local:
+            reply = ("No LLM_API_KEY was found and the configured local backend could not be reached. In Streamlit Cloud, localhost refers to the cloud server. Set API_BASE_URL to your Render backend and configure LLM_API_KEY for direct DeepSeek chat."
+                     if lang == "en" else
+                     "当前未读到 LLM_API_KEY，配置的本地后端也无法连接。在 Streamlit Cloud 中，localhost 指云端服务器。请将 API_BASE_URL 改为实际 Render 后端地址，并配置 LLM_API_KEY 启用 DeepSeek 直连。")
+        else:
+            reply = ("No LLM_API_KEY was found, so chat was sent to API_BASE_URL, but the backend could not be reached. Check the backend address and service, or configure LLM_API_KEY for direct DeepSeek chat."
+                     if lang == "en" else
+                     "当前未读到 LLM_API_KEY，因此问答转发到 API_BASE_URL，但后端连接失败。请检查后端地址及服务状态，或配置 LLM_API_KEY 使用 DeepSeek 直连。")
+        return {"reply": reply, "configured": False, "error": True,
+                "error_code": "CHAT_BACKEND_UNAVAILABLE"}
 
 
 def render_chat_panel(
@@ -374,6 +394,12 @@ def render_chat_panel(
 ) -> None:
     lang = st.session_state.language
     st.subheader(title)
+    if not API_BASE_URL:
+        st.warning("API_BASE_URL is not configured; image prediction requires the backend URL."
+                   if lang == "en" else "尚未配置 API_BASE_URL；图像预测需要填写实际后端地址。")
+    if not setting("LLM_API_KEY"):
+        st.caption("LLM_API_KEY was not found in this app; chat requires a configured backend /chat service."
+                   if lang == "en" else "此应用未读到 LLM_API_KEY；问答将依赖已配置的后端 /chat 服务。")
 
     messages = st.session_state[state_key]
     if not messages:

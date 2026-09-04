@@ -11,9 +11,9 @@ LLM_BASE_URL = "https://api.deepseek.com"
 LLM_MODEL = "deepseek-v4-flash"
 ```
 
-URL 使用纯文本，代码也兼容粘贴的 Markdown 链接外壳。密钥不要提交到 Git。本地从仓库根目录运行时，使用 .streamlit/secrets.toml；从 frontend 目录运行则使用 frontend/.streamlit/secrets.toml。
+这四项放在当前 Streamlit 应用 Secrets 的 TOML 顶层，不要置于 [llm] 等分组下；仓库中的 secrets.toml.example 只是模板，不会自动生效。URL 使用纯文本，代码也兼容粘贴的 Markdown 链接外壳。密钥不要提交到 Git。本地从仓库根目录运行时，使用 .streamlit/secrets.toml；从 frontend 目录运行则使用 frontend/.streamlit/secrets.toml。
 
-Streamlit 配有 LLM_API_KEY 时，在服务端直接请求 DeepSeek；没有配置时调用预测后端 /chat。独立后端需单独设置 LLM_API_KEY、LLM_BASE_URL、LLM_MODEL 环境变量。Secrets 不会自动同步到 Render。预测服务地址以用户确认的 -om9i 地址为准；旧 README 的不带后缀地址不能作为本部署依据。
+Streamlit 配有 LLM_API_KEY 时，在服务端直接请求 DeepSeek；没有配置时调用预测后端 /chat。独立后端需单独设置 LLM_API_KEY、LLM_BASE_URL、LLM_MODEL 环境变量。Secrets 不会自动同步到 Render。预测服务地址以用户确认的 -om9i 地址为准；旧 README 的不带后缀地址不能作为本部署依据。API_BASE_URL 不再默认 localhost，未配置时跳过后端健康请求并提示缺少配置。本地开发若需本机后端，请显式设置 API_BASE_URL=http://localhost:8000 并启动 FastAPI。云端 localhost 指 Streamlit 服务进程所在机器，并不是用户电脑。
 
 ## 两套 harness
 
@@ -57,3 +57,5 @@ frontend/tutor_client.py 按当前 backend/tutor.py 源码内容加载模块并�
 当前 33 项离线测试通过，并用 Streamlit AppTest 模拟截图中的微分/积分关系提问，验证 Markdown 公式传输、无依据拦截的复核与页面显示。测试提供模拟模型响应，不代表真实模型分类准确率。未使用真实密钥调用验证，当前修复尚未部署。
 
 官方参数说明：https://api-docs.deepseek.com/api/create-chat-completion/ 、https://api-docs.deepseek.com/guides/thinking_mode/ 、https://api-docs.deepseek.com/guides/json_mode/ 。
+
+配置路由额外验证：python -m unittest discover -s frontend -p test_app_config.py。3 项测试覆盖缺少配置时零网络请求、本地后端连接失败的安全提示，以及已配置 key 时不依赖预测后端的 DeepSeek 直连。
