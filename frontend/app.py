@@ -4,6 +4,7 @@ Streamlit frontend for chromium(VI) species prediction.
 
 import io
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -220,9 +221,15 @@ st.markdown(
 
 def setting(name: str, default: str = "") -> str:
     try:
-        return str(st.secrets.get(name, os.environ.get(name, default)))
+        value = str(st.secrets.get(name, os.environ.get(name, default)))
     except FileNotFoundError:
-        return os.environ.get(name, default)
+        value = os.environ.get(name, default)
+    if name in ("API_BASE_URL", "LLM_BASE_URL"):
+        value = value.strip()
+        link = re.fullmatch(r"\[[^\]\r\n]+\]\((https?://[^)\s]+)\)", value)
+        if link:
+            value = link.group(1)
+    return value
 
 
 API_BASE_URL = setting("API_BASE_URL", "http://localhost:8000").rstrip("/")

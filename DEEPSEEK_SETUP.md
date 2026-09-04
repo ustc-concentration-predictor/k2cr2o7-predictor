@@ -35,3 +35,16 @@ API_BASE_URL 指向 FastAPI；DeepSeek 只负责问答，不替代图像预测�
 frontend/tutor_client.py 现在按 backend/tutor.py 的确切源码内容缓存并加载独立模块，避免复用旧的全局 tutor 模块；HARNESS_API_VERSION 与函数签名在调用前校验。不兼容时显示维护提示，不删除新参数或降级到缺少范围检查的旧接口。发布时须同时包含 frontend/tutor_client.py、frontend/app.py 和 backend/tutor.py。
 
 回归验证：复现旧接口缓存时的同位置 TypeError；修复后同一 Streamlit AppTest 场景成功完成输入检查、生成和输出检查。17 项离线测试通过。尚未连接线上应用日志，因此缓存原因与用户提供的调用栈一致，但不能仅凭已脱敏信息排除其他 TypeError 来源。
+
+
+## DeepSeek JSON 调用与错误诊断
+
+用户确认的配置是 LLM_BASE_URL=https://api.deepseek.com、LLM_MODEL=deepseek-v4-flash、API_BASE_URL=https://k2cr2o7-api-om9i.onrender.com。后端地址以该值为准；旧 README 中不含 -om9i 的地址不能作为本部署依据。
+
+DeepSeek V4 默认开启思考模式，原来的范围检查 max_tokens=160 可能在输出最终 JSON 前耗尽。现在对官方 api.deepseek.com 的 V4 调用显式设置 thinking.type=disabled，范围检查额度为 512，正文额度为 2400；不向其他服务发送 DeepSeek 专用参数。空答案、思考内容但无最终答案、finish_reason=length、HTTP 错误和 schema 错误分别诊断，失败仍不跳过范围检查，不自动增加付费重试。
+
+Secrets 应填写纯 URL。代码兼容粘贴的 Markdown 链接外壳，并对无效 LLM_BASE_URL 给出 INVALID_ENDPOINT 提示。范围审核 JSON 示例改为实际的单个 decision 值，避免模型照抄竖线分隔的候选值。
+
+页面及 API 返回 error_stage、error_code 和必要的 HTTP 状态。阶段为 configuration、input_scope、generation、answer_format、output_scope；日志仅记录这些本地阶段/代码与状态，不记录密钥、问题、推理内容或服务商响应正文。示例：AUTH_FAILED 表示鉴权失败，PAYMENT_REQUIRED 表示付款/额度问题，OUTPUT_TRUNCATED 表示输出截断，INVALID_SCOPE 表示范围判断格式无效。
+
+依据：https://api-docs.deepseek.com/guides/thinking_mode/ 和 https://api-docs.deepseek.com/api/create-chat-completion/ 。本轮 24 项离线测试以及使用上述配置的模拟 Streamlit 调用通过；未验证真实密钥调用，也未部署这些修复。

@@ -91,6 +91,9 @@ class ChatResponse(BaseModel):
     model: Optional[str] = None
     scope_status: Optional[Literal["clarify", "off_topic", "redirect_query", "redirect_prediction", "block"]] = None
     error: bool = False
+    error_stage: Optional[str] = None
+    error_code: Optional[str] = None
+    http_status: Optional[int] = None
 
 
 def validate_features(features_dict: Dict[str, Any], ph: float) -> List[str]:

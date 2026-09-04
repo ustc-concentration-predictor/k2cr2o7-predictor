@@ -7,7 +7,7 @@ import numpy as np
 import requests
 
 from species_model import SpeciesPredictor
-from tutor import NOTICE, SCHEMAS, ask_tutor, build_messages
+from tutor import NOTICE, SCHEMAS, ask_tutor, build_messages, completion_endpoint
 
 
 def provider_response(value):
@@ -15,6 +15,80 @@ def provider_response(value):
 
 
 class TutorTests(unittest.TestCase):
+    def test_copied_markdown_url_and_complete_endpoint_normalize(self):
+        for url in ("https://api.deepseek.com", " https://api.deepseek.com/ ",
+                    "[https://api.deepseek.com](https://api.deepseek.com)",
+                    "https://api.deepseek.com/chat/completions"):
+            self.assertEqual(completion_endpoint(url), "https://api.deepseek.com/chat/completions")
+
+    @patch("tutor.requests.post")
+    def test_invalid_endpoint_is_diagnosed_before_network_call(self, post):
+        result = ask_tutor("问题", [], "query", {}, "test-key", "not a URL", "model")
+        post.assert_not_called()
+        self.assertEqual(result["error_code"], "INVALID_ENDPOINT")
+        self.assertEqual(result["error_stage"], "configuration")
+
+    @patch("tutor.requests.post")
+    def test_deepseek_short_json_requests_disable_default_thinking(self, post):
+        answer = {k: "explanation" for k in SCHEMAS["query"]}
+        post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
+                            provider_response({"decision": "allow"})]
+        result = ask_tutor("Q<K是什么意思？", [], "query", {}, "test-key",
+                           "https://api.deepseek.com", "deepseek-v4-flash")
+        self.assertNotIn("error", result)
+        payloads = [call.kwargs["json"] for call in post.call_args_list]
+        self.assertEqual([p["max_tokens"] for p in payloads], [512, 2400, 512])
+        self.assertTrue(all(p["thinking"] == {"type": "disabled"} for p in payloads))
+
+    @patch("tutor.requests.post")
+    def test_other_providers_do_not_receive_deepseek_only_parameters(self, post):
+        post.return_value = provider_response({"decision": "off_topic"})
+        ask_tutor("问题", [], "query", {}, "test-key", "https://example.com", "deepseek-v4-flash")
+        self.assertNotIn("thinking", post.call_args.kwargs["json"])
+
+    @patch("tutor.requests.post")
+    def test_http_diagnostics_are_specific_and_never_expose_provider_body(self, post):
+        for status, code in [(400, "BAD_REQUEST"), (401, "AUTH_FAILED"),
+                             (402, "PAYMENT_REQUIRED"), (404, "MODEL_OR_ENDPOINT"),
+                             (429, "RATE_LIMIT"), (503, "PROVIDER_UNAVAILABLE")]:
+            with self.subTest(status=status):
+                response = requests.Response()
+                response.status_code = status
+                response._content = b'SENSITIVE_PROVIDER_DETAIL'
+                response.url = "https://example.com/SENSITIVE_URL"
+                post.return_value = response
+                with self.assertLogs("tutor", level="WARNING") as logs:
+                    result = ask_tutor("问题", [], "query", {}, "SECRET_KEY", "https://example.com", "model")
+                self.assertEqual(result["error_code"], code)
+                self.assertEqual(result["error_stage"], "input_scope")
+                self.assertEqual(result["http_status"], status)
+                self.assertIn(f"HTTP {status}", result["reply"])
+                for secret in ("SENSITIVE_PROVIDER_DETAIL", "SENSITIVE_URL", "SECRET_KEY"):
+                    self.assertNotIn(secret, str(result) + str(logs.output))
+
+    @patch("tutor.requests.post")
+    def test_truncated_or_reasoning_only_response_is_not_reported_as_bad_key(self, post):
+        cases = [("length", "", "reasoning", "OUTPUT_TRUNCATED"),
+                 ("stop", None, "reasoning", "THINKING_ONLY"),
+                 ("stop", " ", "", "EMPTY_CONTENT"),
+                 ("content_filter", None, "", "PROVIDER_FILTERED")]
+        for finish, content, reasoning, code in cases:
+            with self.subTest(code=code):
+                data = {"choices": [{"finish_reason": finish,
+                                      "message": {"content": content, "reasoning_content": reasoning}}]}
+                post.return_value = Mock(json=lambda: data)
+                result = ask_tutor("问题", [], "query", {}, "test-key", "https://example.com", "model")
+                self.assertEqual(result["error_code"], code)
+                self.assertEqual(result["error_stage"], "input_scope")
+                self.assertNotIn("密钥", result["reply"])
+
+    @patch("tutor.requests.post")
+    def test_schema_diagnostic_names_answer_validation_stage(self, post):
+        post.side_effect = [provider_response({"decision": "allow"}), provider_response({"wrong": "field"})]
+        result = ask_tutor("问题", [], "query", {}, "test-key", "https://example.com", "model")
+        self.assertEqual(result["error_code"], "ANSWER_SCHEMA")
+        self.assertEqual(result["error_stage"], "answer_format")
+
     @patch("tutor.requests.post")
     def test_scope_decisions_stop_generation_and_use_fixed_messages(self, post):
         cases = [
