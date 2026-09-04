@@ -7,6 +7,9 @@ from typing import Dict
 
 UI_TEXT: Dict[str, Dict[str, str]] = {
     "en": {
+        'learning_tutor_info': 'Ask about concepts, equations, or exercises in Introduction. Answers use the selected reading as context.',
+        'prediction_tutor_info': 'Assess the latest prediction: species estimates, mass balance, model applicability, uncertainty, and suggested checks.',
+        'learning_source': 'Reading context: Introduction · {version}',
         'tutor_info': 'The teaching tutor supports Streamlit Secrets or backend API configuration; replies distinguish observations, predictions, calculations, and inferences.',
         'heuristic_score': 'pH heuristic score (not an accuracy probability)',
         'required_ph': 'Sample pH (required)',
@@ -32,11 +35,8 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "backend": "Backend",
         "online": "online",
         "offline": "offline",
-        "general_query": "General chemistry query",
-        "query_placeholder": (
-            "Ask about dichromate equilibrium, experimental design, "
-            "or model interpretation..."
-        ),
+        "general_query": 'Introduction learning assistant',
+        "query_placeholder": 'Which concept, equation, or exercise in Introduction is confusing? You can paste the passage here.',
         "llm_unconfigured": (
             "The AI assistant is ready to connect. Configure the backend "
             "environment variables to enable it."
@@ -70,11 +70,8 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "estimated_total": "Estimated total Cr(VI)",
         "confidence": "Confidence",
         "mass_balance_residual": "Mass-balance residual",
-        "result_assistant": "Result analysis assistant",
-        "result_placeholder": (
-            "Ask the model to summarize this result, discuss reliability, "
-            "or suggest experimental checks..."
-        ),
+        "result_assistant": 'Prediction assessment assistant',
+        "result_placeholder": 'Ask about the latest prediction, mass-balance consistency, model applicability, or how to check its reliability.',
         "footer": (
             "K₂Cr₂O₇ Prediction System · ML species prediction with "
             "equilibrium calculation"
@@ -93,6 +90,9 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         ),
     },
     "zh": {
+        'learning_tutor_info': '帮助理解 Introduction 中的概念、公式和思考题，结合当前所选教材解答。',
+        'prediction_tutor_info': '分析最近一次预测的物种浓度、守恒一致性、模型适用性与不确定性，并给出核查建议。',
+        'learning_source': '当前学习资料：Introduction · {version}',
         'tutor_info': '教学导师支持 Streamlit Secrets 或后端 API 配置；回答区分观察、预测、计算与推断。',
         'heuristic_score': 'pH 范围规则评分（非准确概率）',
         'required_ph': '样本 pH（必填）',
@@ -118,8 +118,8 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "backend": "后端",
         "online": "在线",
         "offline": "离线",
-        "general_query": "通用化学问答",
-        "query_placeholder": "可询问重铬酸盐平衡、实验设计或模型结果解释……",
+        "general_query": 'Introduction 学习助手',
+        "query_placeholder": 'Introduction 中哪个概念、公式或思考题不明白？可以粘贴具体段落。',
         "llm_unconfigured": "大模型接口已预留；配置后端环境变量后即可使用。",
         "message": "消息",
         "send": "发送",
@@ -147,8 +147,8 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "estimated_total": "估算总 Cr(VI)",
         "confidence": "置信度",
         "mass_balance_residual": "物料衡算残差",
-        "result_assistant": "结果分析助手",
-        "result_placeholder": "可要求模型总结结果、讨论可靠性或提出实验核验建议……",
+        "result_assistant": '预测结果评估助手',
+        "result_placeholder": '询问本次预测的物种结果、守恒一致性、适用范围，或如何核查可靠性。',
         "footer": "K₂Cr₂O₇ 浓度预测系统 · 机器学习物种预测与平衡计算",
         "sim_title": "Cr(VI) 平衡交互模拟器",
         "sim_initial": "初始溶液：5 mM K₂Cr₂O₇，约 50 mL",

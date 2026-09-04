@@ -263,7 +263,7 @@ def init_state() -> None:
         "query_messages": [],
         "analysis_messages": [],
         "language": "en",
-        "intro_version": "simple",
+        "active_intro_version": "simple",
         "module": "introduction",
     }
     for key, value in defaults.items():
@@ -310,6 +310,17 @@ def predict(image_bytes: bytes, ph: float, filename: str) -> Dict[str, Any]:
         return {"error": str(exc)}
 
 
+def build_learning_context() -> Dict[str, Any]:
+    lang = st.session_state.language
+    version = st.session_state.active_intro_version
+    source = INTRODUCTION_FILES[(version, lang)]
+    context = {"language": lang, "version": version, "source": source.name,
+               "available": source.exists()}
+    if source.exists():
+        context["content"] = source.read_text(encoding="utf-8")
+    return context
+
+
 def ask_llm(
     prompt: str,
     messages: List[Dict[str, str]],
@@ -317,22 +328,25 @@ def ask_llm(
     prediction_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     lang = st.session_state.language
-    language_instruction = (
-        "请始终使用中文回答。\n\n" if lang == "zh" else "Always answer in English.\n\n"
-    )
+    learning_context = build_learning_context() if mode == "query" else None
+    messages = [{"role": m["role"], "content": m["content"]}
+                for m in messages if m.get("include_in_context", True)]
     if setting("LLM_API_KEY"):
-        return ask_tutor(language_instruction + prompt, messages, mode, prediction_context,
+        return ask_tutor(prompt, messages, mode, prediction_context,
                          setting("LLM_API_KEY"),
                          setting("LLM_BASE_URL", "https://api.deepseek.com"),
-                         setting("LLM_MODEL", "deepseek-v4-flash"))
+                         setting("LLM_MODEL", "deepseek-v4-flash"),
+                         learning_context=learning_context, language=lang)
     payload = {
-        "prompt": language_instruction + prompt,
+        "prompt": prompt,
         "messages": messages,
         "mode": mode,
         "prediction_context": prediction_context or {},
+        "learning_context": learning_context or {},
+        "language": lang,
     }
     try:
-        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=60)
+        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=(10, 180))
         if response.status_code == 200:
             return response.json()
         try:
@@ -359,7 +373,7 @@ def render_chat_panel(
 
     messages = st.session_state[state_key]
     if not messages:
-        st.caption(text(lang, "tutor_info"))
+        st.caption(text(lang, "learning_tutor_info" if mode == "query" else "prediction_tutor_info"))
 
     for msg in messages:
         with st.chat_message(msg["role"]):
@@ -379,7 +393,12 @@ def render_chat_panel(
         messages.append(user_message)
         with st.spinner(text(lang, "waiting_model")):
             result = ask_llm(prompt.strip(), messages[:-1], mode, prediction_context)
-        messages.append({"role": "assistant", "content": result.get("reply", "")})
+        keep_context = not result.get("error") and result.get("scope_status") not in (
+            "off_topic", "redirect_query", "redirect_prediction", "block"
+        )
+        user_message["include_in_context"] = keep_context
+        messages.append({"role": "assistant", "content": result.get("reply", ""),
+                         "include_in_context": keep_context})
         st.rerun()
 
 
@@ -1018,6 +1037,8 @@ def render_ph_equilibrium_simulator(lang: str) -> None:
 def render_introduction() -> None:
     lang = st.session_state.language
     st.title(text(lang, "introduction"))
+    if "intro_version" not in st.session_state:
+        st.session_state.intro_version = st.session_state.active_intro_version
     intro_version = st.radio(
         text(lang, "introduction_version"),
         ["simple", "detailed"],
@@ -1025,6 +1046,7 @@ def render_introduction() -> None:
         format_func=lambda value: text(lang, value),
         key="intro_version",
     )
+    st.session_state.active_intro_version = intro_version
     introduction_file = INTRODUCTION_FILES[(intro_version, lang)]
     if introduction_file.exists():
         st.markdown(
@@ -1065,6 +1087,7 @@ def render_introduction() -> None:
 def render_query(api_ok: bool) -> None:
     lang = st.session_state.language
     st.title(text(lang, "query"))
+    st.caption(text(lang, "learning_source").format(version=text(lang, st.session_state.active_intro_version)))
     status = text(lang, "online" if api_ok else "offline")
     st.caption(f"{text(lang, 'backend')}: {API_BASE_URL} · {status}")
     render_chat_panel(

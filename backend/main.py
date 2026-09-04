@@ -81,12 +81,16 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage] = []
     mode: Literal["query", "prediction_analysis"] = "query"
     prediction_context: Dict[str, Any] = {}
+    learning_context: Dict[str, Any] = Field(default_factory=dict)
+    language: Literal["zh", "en"] = "zh"
 
 
 class ChatResponse(BaseModel):
     reply: str
     configured: bool
     model: Optional[str] = None
+    scope_status: Optional[Literal["clarify", "off_topic", "redirect_query", "redirect_prediction", "block"]] = None
+    error: bool = False
 
 
 def validate_features(features_dict: Dict[str, Any], ph: float) -> List[str]:
@@ -224,8 +228,9 @@ async def predict_base64(request: PredictRequest) -> PredictResponse:
 async def chat(request: ChatRequest) -> ChatResponse:
     result = ask_tutor(request.prompt, [m.model_dump() for m in request.messages],
                        request.mode, request.prediction_context,
-                       LLM_API_KEY, LLM_BASE_URL, LLM_MODEL)
-    return ChatResponse(**{k: v for k, v in result.items() if k != "error"})
+                       LLM_API_KEY, LLM_BASE_URL, LLM_MODEL,
+                       learning_context=request.learning_context, language=request.language)
+    return ChatResponse(**result)
 
 
 if __name__ == "__main__":
