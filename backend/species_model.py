@@ -14,6 +14,7 @@ balance:
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -84,6 +85,9 @@ class SpeciesPredictor:
         self.model_name = package.get("model_name", self.model_name)
         self.route_strategy = package.get("route_strategy", self.route_strategy)
         self.metrics = package.get("external_test_metrics", [])
+        self.model_version = hashlib.sha256(self.model_path.read_bytes()).hexdigest()[:12]
+        self.training_feature_ranges = package.get("training_feature_ranges")
+        self.training_concentration_range_mM = package.get("training_concentration_range_mM")
         self.mass_balance_formula = package.get("mass_balance_formula", self.mass_balance_formula)
         logger.info("Species model loaded: %s", self.model_name)
 
@@ -123,7 +127,7 @@ class SpeciesPredictor:
         cr2o7_mM = float(values["Cr2O7_mM"])
         cro4_raw_mM = total_cr_mM - hcro4_mM - 2.0 * cr2o7_mM
         cro4_mM = max(cro4_raw_mM, 0.0)
-        mass_balance_residual_mM = total_cr_mM - hcro4_mM - 2.0 * cr2o7_mM - cro4_raw_mM
+        mass_balance_residual_mM = total_cr_mM - hcro4_mM - 2.0 * cr2o7_mM - cro4_mM
 
         warnings = self._generate_warnings(ph, values["route_pH_model"], cro4_raw_mM)
         confidence = self._calculate_confidence(ph)
@@ -142,6 +146,7 @@ class SpeciesPredictor:
             "confidence": confidence,
             "warnings": warnings,
             "model_info": {
+                **self.get_model_info(),
                 "model_name": self.model_name,
                 "feature_cols": self.feature_cols,
                 "target_cols": self.target_cols,
@@ -165,6 +170,8 @@ class SpeciesPredictor:
 
     def _generate_warnings(self, ph: float, routed_ph: float, cro4_raw_mM: float) -> List[str]:
         warnings: List[str] = []
+        if not self.training_feature_ranges:
+            warnings.append("Training color-feature ranges are unavailable; image domain validity cannot be assessed. Consult your teacher.")
         ph_min, ph_max = self.valid_ph_range
         if ph < ph_min or ph > ph_max:
             warnings.append(
@@ -187,6 +194,10 @@ class SpeciesPredictor:
 
     def get_model_info(self) -> Dict[str, Any]:
         return {
+            "model_version": self.model_version,
+            "training_feature_ranges": self.training_feature_ranges,
+            "training_concentration_range_mM": self.training_concentration_range_mM,
+            "confidence_method": "pH heuristic only; not a calibrated probability",
             "model_type": self.model_name,
             "feature_count": len(self.feature_cols),
             "features": self.feature_cols,

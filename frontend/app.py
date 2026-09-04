@@ -4,6 +4,7 @@ Streamlit frontend for chromium(VI) species prediction.
 
 import io
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -93,7 +94,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+from tutor import ask_tutor
+
+
+def setting(name: str, default: str = "") -> str:
+    try:
+        return str(st.secrets.get(name, os.environ.get(name, default)))
+    except FileNotFoundError:
+        return os.environ.get(name, default)
+
+
+API_BASE_URL = setting("API_BASE_URL", "http://localhost:8000").rstrip("/")
 CONTENT_DIR = Path(__file__).parent / "content"
 INTRODUCTION_FILE = CONTENT_DIR / "knowledge_summary.md"
 
@@ -118,6 +130,7 @@ def init_state() -> None:
         "original_image": None,
         "roi_selected": False,
         "last_prediction": None,
+        "last_result": None,
         "query_messages": [],
         "analysis_messages": [],
     }
@@ -129,8 +142,8 @@ def init_state() -> None:
 def check_api() -> bool:
     try:
         response = requests.get(f"{API_BASE_URL}/health", timeout=10)
-        return response.status_code == 200
-    except requests.RequestException:
+        return response.status_code == 200 and response.json().get("model_loaded", False)
+    except (requests.RequestException, ValueError):
         return False
 
 
@@ -170,6 +183,11 @@ def ask_llm(
     mode: str,
     prediction_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    if setting("LLM_API_KEY"):
+        return ask_tutor(prompt, messages, mode, prediction_context,
+                         setting("LLM_API_KEY"),
+                         setting("LLM_BASE_URL", "https://api.deepseek.com"),
+                         setting("LLM_MODEL", "deepseek-v4-flash"))
     payload = {
         "prompt": prompt,
         "messages": messages,
@@ -200,7 +218,7 @@ def render_chat_panel(
 
     messages = st.session_state[state_key]
     if not messages:
-        st.caption("大模型接口已预留，填入后端环境变量后即可使用。")
+        st.caption("教学导师支持 Streamlit Secrets 或后端 API 配置；回答区分观察、预测、计算与推断。")
 
     for msg in messages:
         with st.chat_message(msg["role"]):
@@ -880,23 +898,14 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     cro4 = float(species.get("CrO4_mM", 0.0))
     residual = float(species.get("mass_balance_residual_mM", 0.0))
 
-    st.session_state.history.append(
-        {
-            "time": datetime.now().strftime("%H:%M:%S"),
-            "ph": ph,
-            "total_cr": total_cr,
-            "hcro4": hcro4,
-            "cr2o7": cr2o7,
-            "cro4": cro4,
-        }
-    )
     st.session_state.last_prediction = {
         "pH": ph,
         "HCrO4_mM": hcro4,
         "Cr2O7_mM": cr2o7,
         "CrO4_mM": cro4,
         "estimated_total_cr_mM": total_cr,
-        "dimer_residual_mM": residual,
+        "mass_balance_residual_mM": residual,
+        "species_model_info": result.get("species_model_info", {}),
         "confidence": result.get("confidence"),
         "warnings": result.get("warnings", []),
         "features_used": result.get("features_used", {}),
@@ -910,9 +919,22 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     c4.metric("Estimated total Cr(VI)", f"{total_cr:.4f} mM")
 
     d1, d2, d3 = st.columns(3)
-    d1.metric("Confidence", f"{float(result.get('confidence', 0.0)):.1%}")
+    d1.metric("pH 范围规则评分（非准确概率）", f"{float(result.get('confidence', 0.0)):.2f}")
     d2.metric("Mass-balance residual", f"{residual:.4f} mM")
     d3.metric("pH", f"{ph:.1f}")
+
+    st.caption("输入 pH → 图像处理 → 提取 a* → 回归预测 → 质量守恒 → 化学解释")
+    st.write("提取的 Lab a*：", result.get("features_used", {}).get("lab", [None, None, None])[1])
+    st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": "模型预测"},
+                  {"物种": "HCrO4-", "浓度 mM": hcro4, "来源": "模型预测"},
+                  {"物种": "Cr2O7²-", "浓度 mM": cr2o7, "来源": "模型预测"},
+                  {"物种": "CrO4²-", "浓度 mM": cro4, "来源": "质量守恒计算"}])
+    st.bar_chart({"HCrO4-": [hcro4], "Cr2O7²-（按 Cr 计）": [2 * cr2o7], "CrO4²-": [cro4]}, stack=True)
+    st.caption("堆叠图单位 mM（按 Cr 原子计）；预测结果不是经认证的测量结果。")
+    info = result.get("species_model_info", {})
+    st.write("模型版本：", info.get("model_version", "未知"), "有效 pH：", info.get("valid_ph_range"))
+    st.write("训练浓度范围：", info.get("training_concentration_range_mM") or "未知（模型包未提供）")
+    st.dataframe(info.get("external_test_metrics", []))
 
     for warning in result.get("warnings", []):
         st.warning(warning)
@@ -926,7 +948,9 @@ def render_model_prediction(api_ok: bool) -> None:
 
     with left:
         st.subheader("Sample image")
-        uploaded = st.file_uploader("Select photo", type=["jpg", "jpeg", "png", "tif", "tiff"])
+        ph = st.number_input("样本 pH（必填）", min_value=0.0, max_value=14.0, value=None, step=0.1)
+        st.caption("请先确认样本 pH，再上传图像。模型以最近训练 pH 路由。")
+        uploaded = st.file_uploader("Select photo", type=["jpg", "jpeg", "png", "tif", "tiff"], disabled=ph is None)
         if uploaded:
             image = Image.open(uploaded)
             st.session_state.original_image = image
@@ -939,10 +963,9 @@ def render_model_prediction(api_ok: bool) -> None:
             )
             st.session_state.roi_selected = True
 
-        ph = st.slider("pH", 3.0, 8.0, 6.0, 0.1)
         st.caption("The deployed model is trained for pH 3-8. pH 7-8 may amplify CrO4^2- uncertainty.")
 
-        can_predict = bool(uploaded and api_ok and st.session_state.cropped_image)
+        can_predict = bool(ph is not None and uploaded and api_ok and st.session_state.cropped_image)
         if st.button("Predict", disabled=not can_predict, type="primary"):
             with st.spinner("Analyzing ROI image..."):
                 image_bytes = save_crop_for_prediction(st.session_state.cropped_image, uploaded.name)
@@ -950,7 +973,16 @@ def render_model_prediction(api_ok: bool) -> None:
             if "error" in result:
                 st.error(result["error"])
             else:
-                render_prediction_results(result, ph)
+                st.session_state.last_result = (result, ph)
+                st.session_state.analysis_messages = []
+                st.session_state.history.append({
+                    "time": datetime.now().strftime("%H:%M:%S"), "ph": ph,
+                    "cro4": result["species_concentrations"]["CrO4_mM"],
+                })
+        if st.session_state.last_result:
+            saved_result, saved_ph = st.session_state.last_result
+            st.caption(f"以下为上一次完成的预测（pH {saved_ph:g}），修改图像或 pH 后需重新点击 Predict。")
+            render_prediction_results(saved_result, saved_ph)
 
     with right:
         st.subheader("ROI preview")

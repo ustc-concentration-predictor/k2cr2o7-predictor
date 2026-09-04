@@ -12,6 +12,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from tutor import ask_tutor
 from image_processor import preprocess_image
 from species_model import get_species_predictor
 
@@ -71,14 +72,14 @@ class HealthResponse(BaseModel):
 
 
 class ChatMessage(BaseModel):
-    role: Literal["user", "assistant", "system"]
-    content: str = Field(..., min_length=1)
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1, max_length=4000)
 
 
 class ChatRequest(BaseModel):
-    prompt: str = Field(..., min_length=1)
+    prompt: str = Field(..., min_length=1, max_length=4000)
     messages: List[ChatMessage] = []
-    mode: str = Field(default="query")
+    mode: Literal["query", "prediction_analysis"] = "query"
     prediction_context: Dict[str, Any] = {}
 
 
@@ -152,23 +153,6 @@ def run_prediction(image_bytes: bytes, ph: float) -> PredictResponse:
     )
 
 
-def system_prompt_for(mode: str, prediction_context: Dict[str, Any]) -> str:
-    base = (
-        "You are a careful chemistry assistant for a potassium dichromate web app. "
-        "Answer in the user's language. Keep explanations grounded in chromium(VI) "
-        "equilibria, color features, pH, and model uncertainty. Do not invent hidden "
-        "training data or claim laboratory certainty."
-    )
-    if mode == "prediction_analysis":
-        return (
-            base
-            + "\nThe user is asking about a model prediction result. Use the supplied "
-            "prediction context, explain reliability and possible experimental checks."
-            f"\nPrediction context: {prediction_context}"
-        )
-    return base
-
-
 @app.get("/")
 async def root() -> Dict[str, Any]:
     return {
@@ -238,43 +222,10 @@ async def predict_base64(request: PredictRequest) -> PredictResponse:
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
-    if not LLM_API_KEY:
-        return ChatResponse(
-            reply=(
-                "大模型接口代码已经接好，但后端还没有配置 API key。"
-                "请在部署环境中设置 LLM_API_KEY，并按需要设置 LLM_BASE_URL 和 LLM_MODEL。"
-            ),
-            configured=False,
-            model=None,
-        )
-
-    upstream_messages = [
-        {"role": "system", "content": system_prompt_for(request.mode, request.prediction_context)}
-    ]
-    upstream_messages.extend({"role": m.role, "content": m.content} for m in request.messages[-12:])
-    upstream_messages.append({"role": "user", "content": request.prompt})
-
-    try:
-        response = requests.post(
-            LLM_BASE_URL,
-            headers={
-                "Authorization": f"Bearer {LLM_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": LLM_MODEL,
-                "messages": upstream_messages,
-                "temperature": 0.3,
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-        data = response.json()
-        reply = data["choices"][0]["message"]["content"]
-        return ChatResponse(reply=reply, configured=True, model=LLM_MODEL)
-    except Exception as exc:
-        logger.error("Chat request failed: %s", exc, exc_info=True)
-        raise HTTPException(status_code=502, detail=f"Chat provider request failed: {exc}") from exc
+    result = ask_tutor(request.prompt, [m.model_dump() for m in request.messages],
+                       request.mode, request.prediction_context,
+                       LLM_API_KEY, LLM_BASE_URL, LLM_MODEL)
+    return ChatResponse(**{k: v for k, v in result.items() if k != "error"})
 
 
 if __name__ == "__main__":

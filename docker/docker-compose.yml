@@ -19,13 +19,14 @@ services:
 
   frontend:
     build:
-      context: ../frontend
-      dockerfile: ../docker/Dockerfile.frontend
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
     container_name: k2cr2o7-frontend
     ports:
       - "8501:8501"
     environment:
       - PYTHONUNBUFFERED=1
+      - API_BASE_URL=http://backend:8000
     depends_on:
       - backend
     restart: unless-stopped

@@ -216,3 +216,6 @@ deployment_excluded_artifacts_*/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Streamlit credentials (keep example templates tracked)
+.streamlit/secrets.toml
+**/.streamlit/secrets.toml
