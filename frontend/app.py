@@ -16,6 +16,7 @@ from PIL import Image
 from streamlit_cropper import st_cropper
 
 from i18n import text
+from chat_formatting import format_chat_math
 from tutor_client import ask_tutor
 
 
@@ -349,7 +350,7 @@ def ask_llm(
         "language": lang,
     }
     try:
-        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=(10, 180))
+        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=(10, 240))
         if response.status_code == 200:
             return response.json()
         try:
@@ -380,7 +381,7 @@ def render_chat_panel(
 
     for msg in messages:
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            st.markdown(format_chat_math(msg["content"]) if msg["role"] == "assistant" else msg["content"])
 
     with st.form(f"{state_key}_form", clear_on_submit=True):
         prompt = st.text_area(
@@ -399,7 +400,12 @@ def render_chat_panel(
         keep_context = not result.get("error") and result.get("scope_status") not in (
             "off_topic", "redirect_query", "redirect_prediction", "block"
         )
-        user_message["include_in_context"] = keep_context
+        # The question already passed input scope when generation/review fails.
+        # Preserve that question so a follow-up like "为什么" retains its topic;
+        # never feed the failed/blocked candidate answer back into the model.
+        user_message["include_in_context"] = keep_context or result.get("scope_status") == "block" or result.get("error_stage") in (
+            "generation", "answer_format", "output_scope"
+        )
         messages.append({"role": "assistant", "content": result.get("reply", ""),
                          "include_in_context": keep_context})
         st.rerun()

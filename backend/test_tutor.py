@@ -15,6 +15,38 @@ def provider_response(value):
 
 
 class TutorTests(unittest.TestCase):
+    @patch("tutor.requests.post")
+    def test_empty_generation_retries_once_then_still_reviews_answer(self, post):
+        answer = {k: "explanation" for k in SCHEMAS["query"]}
+        empty = Mock(json=lambda: {"choices": [{"finish_reason": "stop", "message": {"content": ""}}]})
+        post.side_effect = [provider_response({"decision": "allow"}), empty,
+                            provider_response(answer), provider_response({"decision": "block"})]
+        result = ask_tutor("范特霍夫公式微分式我没看懂", [], "query", {}, "key", "https://example.com", "model")
+        self.assertEqual(post.call_count, 4)
+        self.assertEqual(result["scope_status"], "block")
+        self.assertNotIn("explanation", result["reply"])
+        retry_messages = post.call_args_list[2].kwargs["json"]["messages"]
+        self.assertEqual(retry_messages[-1]["content"], "范特霍夫公式微分式我没看懂")
+        self.assertIn("previous call returned no final content", retry_messages[1]["content"])
+
+    @patch("tutor.requests.post")
+    def test_second_empty_generation_stops_without_unbounded_retries(self, post):
+        empty = Mock(json=lambda: {"choices": [{"message": {"content": ""}}]})
+        post.side_effect = [provider_response({"decision": "allow"}), empty, empty]
+        result = ask_tutor("公式我没看懂", [], "query", {}, "key", "https://example.com", "model")
+        self.assertEqual(post.call_count, 3)
+        self.assertEqual(result["error_code"], "EMPTY_CONTENT")
+        self.assertEqual(result["error_stage"], "generation")
+
+    @patch("tutor.requests.post")
+    def test_generation_auth_error_does_not_retry(self, post):
+        response = requests.Response()
+        response.status_code = 401
+        post.side_effect = [provider_response({"decision": "allow"}), response]
+        result = ask_tutor("公式我没看懂", [], "query", {}, "key", "https://example.com", "model")
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual(result["error_code"], "AUTH_FAILED")
+
     def test_copied_markdown_url_and_complete_endpoint_normalize(self):
         for url in ("https://api.deepseek.com", " https://api.deepseek.com/ ",
                     "[https://api.deepseek.com](https://api.deepseek.com)",
