@@ -350,7 +350,7 @@ def ask_llm(
         "language": lang,
     }
     try:
-        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=(10, 240))
+        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=(10, 300))
         if response.status_code == 200:
             return response.json()
         try:

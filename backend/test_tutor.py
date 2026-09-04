@@ -7,7 +7,7 @@ import numpy as np
 import requests
 
 from species_model import SpeciesPredictor
-from tutor import NOTICE, SCHEMAS, ask_tutor, build_messages, completion_endpoint
+from tutor import NOTICE, SCHEMAS, ask_tutor, build_messages, completion_endpoint, parse_answer
 
 
 def provider_response(value):
@@ -15,12 +15,54 @@ def provider_response(value):
 
 
 class TutorTests(unittest.TestCase):
+    def test_markdown_math_and_quotes_do_not_need_json_escaping(self):
+        equation = r'$$\frac{d\ln K}{dT}=\frac{\Delta_r H^\circ}{RT^2}$$'
+        content = '### answer\nThe "differential" form:\n' + equation + '\n\n### reasoning\nIntegrate between T1 and T2.\n\n### learning_check\nWhat changes if enthalpy is negative?'
+        answer = parse_answer(content, SCHEMAS["query"])
+        self.assertIn(equation, answer["answer"])
+        self.assertIn('"differential"', answer["answer"])
+        self.assertNotIn('\f', answer["answer"])
+
+    @patch("tutor.requests.post")
+    def test_markdown_generation_reaches_scope_review_with_math_intact(self, post):
+        body = '### answer\n' + r'$$\ln\frac{K_2}{K_1}=-\frac{\Delta H}{R}(\frac{1}{T_2}-\frac{1}{T_1})$$' + '\n### reasoning\nIntegrate the derivative.\n### learning_check\nWhat assumption is needed?'
+        post.side_effect = [provider_response({"decision": "allow"}),
+                            Mock(json=lambda: {"choices": [{"message": {"content": body}}]}),
+                            provider_response({"decision": "allow"})]
+        result = ask_tutor("explain the relationship between the differential and integrated forms", [], "query", {}, "key", "https://example.com", "model")
+        self.assertNotIn("error", result)
+        self.assertIn(r'\ln\frac{K_2}{K_1}', result["reply"])
+        formats = [c.kwargs["json"]["response_format"]["type"] for c in post.call_args_list]
+        self.assertEqual(formats, ["json_object", "text", "json_object"])
+
+    @patch("tutor.requests.post")
+    def test_unsupported_block_is_reviewed_once_and_can_be_corrected(self, post):
+        answer = {k: "The differential and integrated forms are related by integration." for k in SCHEMAS["query"]}
+        post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
+                            provider_response({"decision": "block"}), provider_response({"decision": "allow"})]
+        result = ask_tutor("explain the 2 forms of the van 't Hoff equation", [], "query", {}, "key", "https://example.com", "model")
+        self.assertNotIn("error", result)
+        self.assertNotIn("scope_status", result)
+        self.assertEqual(post.call_count, 4)
+
+    @patch("tutor.requests.post")
+    def test_fabricated_review_evidence_never_blocks_as_if_user_were_off_topic(self, post):
+        answer = {k: "A related explanation of the van 't Hoff equation." for k in SCHEMAS["query"]}
+        verdict = {"decision": "block", "reason": "off_topic", "evidence": "text that does not exist in the answer"}
+        post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
+                            provider_response(verdict), provider_response(verdict)]
+        result = ask_tutor("explain the two forms", [], "query", {}, "key", "https://example.com", "model")
+        self.assertEqual(post.call_count, 4)
+        self.assertEqual(result["error_code"], "REVIEW_EVIDENCE")
+        self.assertNotIn("scope_status", result)
+        self.assertNotIn("A related explanation", result["reply"])
+
     @patch("tutor.requests.post")
     def test_empty_generation_retries_once_then_still_reviews_answer(self, post):
         answer = {k: "explanation" for k in SCHEMAS["query"]}
         empty = Mock(json=lambda: {"choices": [{"finish_reason": "stop", "message": {"content": ""}}]})
         post.side_effect = [provider_response({"decision": "allow"}), empty,
-                            provider_response(answer), provider_response({"decision": "block"})]
+                            provider_response(answer), provider_response({"decision": "block", "reason": "off_topic", "evidence": "explanation"})]
         result = ask_tutor("范特霍夫公式微分式我没看懂", [], "query", {}, "key", "https://example.com", "model")
         self.assertEqual(post.call_count, 4)
         self.assertEqual(result["scope_status"], "block")
@@ -69,7 +111,7 @@ class TutorTests(unittest.TestCase):
                            "https://api.deepseek.com", "deepseek-v4-flash")
         self.assertNotIn("error", result)
         payloads = [call.kwargs["json"] for call in post.call_args_list]
-        self.assertEqual([p["max_tokens"] for p in payloads], [512, 2400, 512])
+        self.assertEqual([p["max_tokens"] for p in payloads], [512, 2400, 768])
         self.assertTrue(all(p["thinking"] == {"type": "disabled"} for p in payloads))
 
     @patch("tutor.requests.post")
@@ -146,7 +188,7 @@ class TutorTests(unittest.TestCase):
     def test_output_scope_rejection_hides_well_formed_off_topic_answer(self, post):
         answer = {k: "OFF_TOPIC_CANDIDATE" for k in SCHEMAS["query"]}
         post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
-                            provider_response({"decision": "block"})]
+                            provider_response({"decision": "block", "reason": "off_topic", "evidence": "OFF_TOPIC_CANDIDATE"})]
         result = ask_tutor("Q和K有什么区别？", [], "query", {}, "test-key", "https://example.com", "model")
         self.assertEqual(post.call_count, 3)
         self.assertEqual(result["scope_status"], "block")
@@ -251,6 +293,7 @@ class TutorTests(unittest.TestCase):
     @patch("tutor.requests.post")
     def test_malformed_response_is_never_shown(self, post):
         post.side_effect = [provider_response({"decision": "allow"}),
+                            Mock(json=lambda: {"choices": [{"message": {"content": "unvalidated text"}}]}),
                             Mock(json=lambda: {"choices": [{"message": {"content": "unvalidated text"}}]})]
         result = ask_tutor("解释", [], "query", {}, "test-key", "https://example.com", "test-model")
         self.assertTrue(result["error"])
