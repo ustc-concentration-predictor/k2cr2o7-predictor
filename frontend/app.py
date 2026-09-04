@@ -4,7 +4,6 @@ Streamlit frontend for chromium(VI) species prediction.
 
 import io
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -16,6 +15,7 @@ from PIL import Image
 from streamlit_cropper import st_cropper
 
 from i18n import text
+from tutor_client import ask_tutor
 
 
 st.set_page_config(
@@ -217,10 +217,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from tutor import ask_tutor
-
 
 def setting(name: str, default: str = "") -> str:
     try:

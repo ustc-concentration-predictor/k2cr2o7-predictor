@@ -26,3 +26,12 @@ API_BASE_URL 指向 FastAPI；DeepSeek 只负责问答，不替代图像预测�
 官方配置依据：https://api-docs.deepseek.com/ 和 https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management 。模型名称可按账户可用模型修改。
 
 验证：13 项离线回归测试通过（提供模拟分类结果，验证程序分支与失败处理）；Streamlit AppTest 检查简版/详版选择跨页面保留、中英文教材切换、Query 请求携带正确原文及后端转发；另验证拒绝记录在页面可见、后续请求排除这些记录及 API 保留范围检查状态；Python 编译与 git diff --check 通过。
+
+
+## 更新后 Query 出现 TypeError
+
+若报错停在 frontend/app.py 的 ask_tutor 调用处，且服务日志提示 unexpected keyword argument learning_context，常见原因是 Streamlit 长驻进程仍缓存旧版 tutor 模块。可先在应用管理页重启整个应用，再重试；仅刷新浏览器不会重建服务进程。
+
+frontend/tutor_client.py 现在按 backend/tutor.py 的确切源码内容缓存并加载独立模块，避免复用旧的全局 tutor 模块；HARNESS_API_VERSION 与函数签名在调用前校验。不兼容时显示维护提示，不删除新参数或降级到缺少范围检查的旧接口。发布时须同时包含 frontend/tutor_client.py、frontend/app.py 和 backend/tutor.py。
+
+回归验证：复现旧接口缓存时的同位置 TypeError；修复后同一 Streamlit AppTest 场景成功完成输入检查、生成和输出检查。17 项离线测试通过。尚未连接线上应用日志，因此缓存原因与用户提供的调用栈一致，但不能仅凭已脱敏信息排除其他 TypeError 来源。
