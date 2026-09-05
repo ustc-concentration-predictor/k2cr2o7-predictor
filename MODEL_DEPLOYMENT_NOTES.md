@@ -5,12 +5,13 @@ Current deployed model:
 - Model: pH-submodel GradientBoostingRegressor
 - Feature set: single Lab `a`
 - Training pH range: pH 3-8
-- Direct targets: Total Cr(VI), HCrO4-, Cr2O7^2-
-- Derived target: CrO4^2- by mass balance
+- Equilibrium constant: Ka2 = 3.0e-7
+- Direct targets: HCrO4-, Cr2O7^2-, CrO4^2-
+- Computed output: Total Cr(VI) by chromium mass balance
 
 Mass-balance formula:
 
-`CrO4_mM = Total Cr(VI)_mM - HCrO4_mM - 2 * Cr2O7_mM`
+`Total Cr(VI)_mM = HCrO4_mM + 2 * Cr2O7_mM + CrO4_mM`
 
 The deployed model file is:
 
@@ -30,7 +31,7 @@ The image-processing route is:
 Private training data, final training outputs, figure data, and manuscript
 analysis scripts are intentionally stored outside this deployable project:
 
-`J:\codex_workplace\重铬酸钾\final_gbr_single_a_model_package_20260722`
+`ka2_3e_7_three_species_direct_total_by_balance_experiment_20260815`
 
 Do not move private source data into this deployable project unless you intend
 to publish it.

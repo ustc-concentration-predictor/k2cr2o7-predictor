@@ -306,17 +306,19 @@ class TutorTests(unittest.TestCase):
         self.assertEqual(post.call_count, 1)  # Only the input scope check.
         self.assertIn("先输入 pH", result["reply"])
 
-    def test_clipped_species_preserves_inconsistency(self):
+    def test_three_direct_species_compute_total_by_balance(self):
         predictor = SpeciesPredictor()
         vector = np.zeros((1, len(predictor.FEATURE_ORDER)))
         vector[0, 0] = 6
         with patch.object(predictor, "_predict_direct_targets", return_value={
-            "total_cr_mM": 1, "HCrO4_mM": 0.8, "Cr2O7_mM": 0.2, "route_pH_model": 6
+            "HCrO4_mM": 0.8, "Cr2O7_mM": 0.2, "CrO4_mM": 0.1, "route_pH_model": 6
         }):
             result = predictor.predict(vector)
         species = result["species_concentrations"]
-        self.assertEqual(species["CrO4_mM"], 0)
-        self.assertAlmostEqual(species["mass_balance_residual_mM"], -0.2)
+        self.assertAlmostEqual(species["estimated_total_cr_mM"], 1.3)
+        self.assertAlmostEqual(species["mass_balance_residual_mM"], 0.0)
+        self.assertEqual(result["model_info"]["target_cols"], ["HCrO4_mM", "Cr2O7_mM", "CrO4_mM"])
+        self.assertEqual(result["model_info"]["computed_species"], ["total_cr_mM"])
         self.assertTrue(result["model_info"]["external_test_metrics"])
         self.assertIsNone(result["model_info"]["training_feature_ranges"])
 

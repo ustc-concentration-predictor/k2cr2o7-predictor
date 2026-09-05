@@ -1,15 +1,15 @@
 """Deployed chromium(VI) species prediction model.
 
-The final deployed route uses pH-specific GradientBoostingRegressor
-submodels. Each submodel uses a single image feature, Lab ``a``, to predict
-three quantities directly:
+The route uses pH-specific GradientBoostingRegressor submodels. Each
+submodel uses a single image feature, Lab ``a``, to predict three species
+concentrations directly:
 
-    Total Cr(VI), HCrO4-, and Cr2O7^2-
+    HCrO4-, Cr2O7^2-, and CrO4^2-
 
-CrO4^2- is not predicted as a separate target. It is calculated by mass
-balance:
+Total Cr(VI), expressed on a chromium-atom basis, is calculated by mass
+balance and is not a direct model target:
 
-    CrO4^2- = Total Cr(VI) - HCrO4- - 2 * Cr2O7^2-
+    Total Cr(VI) = HCrO4- + 2 * Cr2O7^2- + CrO4^2-
 """
 
 from __future__ import annotations
@@ -55,14 +55,16 @@ class SpeciesPredictor:
         self.model_path = Path(model_path)
         self.models_by_ph: Dict[float, Any] = {}
         self.feature_cols: List[str] = ["a"]
-        self.target_cols: List[str] = ["total_cr_mM", "HCrO4_mM", "Cr2O7_mM"]
+        self.target_cols: List[str] = ["HCrO4_mM", "Cr2O7_mM", "CrO4_mM"]
         self.valid_ph_range = (3.0, 8.0)
         self.ka1 = 2.94e-2
-        self.ka2 = 1.26e-6
-        self.model_name = "pH-submodel GradientBoostingRegressor, single a"
+        self.ka2 = 3.0e-7
+        self.model_name = "pH-submodel GradientBoostingRegressor, single a, three direct species targets"
         self.route_strategy = "nearest_available_pH_submodel"
         self.metrics: List[Dict[str, Any]] = []
-        self.mass_balance_formula = "CrO4_mM = total_cr_mM - HCrO4_mM - 2 * Cr2O7_mM"
+        self.computed_species: List[str] = ["total_cr_mM"]
+        self.prediction_strategy = "three_species_direct_total_cr_by_mass_balance"
+        self.mass_balance_formula = "total_cr_mM = HCrO4_mM + 2*Cr2O7_mM + CrO4_mM"
         self._load_model()
 
     def _load_model(self) -> None:
@@ -85,6 +87,8 @@ class SpeciesPredictor:
         self.model_name = package.get("model_name", self.model_name)
         self.route_strategy = package.get("route_strategy", self.route_strategy)
         self.metrics = package.get("external_test_metrics", [])
+        self.computed_species = list(package.get("computed_species", self.computed_species))
+        self.prediction_strategy = package.get("prediction_strategy", self.prediction_strategy)
         self.model_version = hashlib.sha256(self.model_path.read_bytes()).hexdigest()[:12]
         self.training_feature_ranges = package.get("training_feature_ranges")
         self.training_concentration_range_mM = package.get("training_concentration_range_mM")
@@ -122,21 +126,19 @@ class SpeciesPredictor:
         ph = float(feature_dict["pH"])
         values = self._predict_direct_targets(feature_dict, ph)
 
-        total_cr_mM = float(values["total_cr_mM"])
         hcro4_mM = float(values["HCrO4_mM"])
         cr2o7_mM = float(values["Cr2O7_mM"])
-        cro4_raw_mM = total_cr_mM - hcro4_mM - 2.0 * cr2o7_mM
-        cro4_mM = max(cro4_raw_mM, 0.0)
+        cro4_mM = float(values["CrO4_mM"])
+        total_cr_mM = hcro4_mM + 2.0 * cr2o7_mM + cro4_mM
         mass_balance_residual_mM = total_cr_mM - hcro4_mM - 2.0 * cr2o7_mM - cro4_mM
 
-        warnings = self._generate_warnings(ph, values["route_pH_model"], cro4_raw_mM)
+        warnings = self._generate_warnings(ph, values["route_pH_model"])
         confidence = self._calculate_confidence(ph)
 
         species = {
             "HCrO4_mM": hcro4_mM,
             "Cr2O7_mM": cr2o7_mM,
             "CrO4_mM": cro4_mM,
-            "CrO4_raw_mM": cro4_raw_mM,
             "estimated_total_cr_mM": total_cr_mM,
             "mass_balance_residual_mM": mass_balance_residual_mM,
         }
@@ -150,7 +152,8 @@ class SpeciesPredictor:
                 "model_name": self.model_name,
                 "feature_cols": self.feature_cols,
                 "target_cols": self.target_cols,
-                "computed_species": ["CrO4_mM"],
+                "computed_species": self.computed_species,
+                "prediction_strategy": self.prediction_strategy,
                 "valid_ph_range": self.valid_ph_range,
                 "route_strategy": self.route_strategy,
                 "route_pH_model": values["route_pH_model"],
@@ -168,7 +171,7 @@ class SpeciesPredictor:
             return 0.75
         return 0.9
 
-    def _generate_warnings(self, ph: float, routed_ph: float, cro4_raw_mM: float) -> List[str]:
+    def _generate_warnings(self, ph: float, routed_ph: float) -> List[str]:
         warnings: List[str] = []
         if not self.training_feature_ranges:
             warnings.append("Training color-feature ranges are unavailable; image domain validity cannot be assessed. Consult your teacher.")
@@ -180,15 +183,10 @@ class SpeciesPredictor:
             )
         if abs(ph - routed_ph) > 1e-9:
             warnings.append(f"pH={ph:.1f} was routed to the nearest trained pH submodel: pH {routed_ph:g}.")
-        if cro4_raw_mM < 0:
-            warnings.append(
-                "The mass-balance CrO4^2- estimate was negative and was clipped to zero for display. "
-                "This usually indicates amplified prediction error in the derived CrO4^2- term."
-            )
         if ph >= 7.0:
             warnings.append(
-                "At higher pH values, CrO4^2- is derived by subtraction and can be more sensitive "
-                "to small errors in the directly predicted species."
+                "At higher pH values, predictions remain within the trained range but receive a lower "
+                "heuristic confidence score; verify image conditions and interpret the result cautiously."
             )
         return warnings
 
@@ -202,7 +200,8 @@ class SpeciesPredictor:
             "feature_count": len(self.feature_cols),
             "features": self.feature_cols,
             "target_cols": self.target_cols,
-            "computed_species": ["CrO4_mM"],
+            "computed_species": self.computed_species,
+            "prediction_strategy": self.prediction_strategy,
             "available_pH_submodels": sorted(self.models_by_ph),
             "valid_ph_range": self.valid_ph_range,
             "route_strategy": self.route_strategy,

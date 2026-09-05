@@ -939,8 +939,9 @@ def render_ph_equilibrium_simulator(lang: str) -> None:
       <script>
         const colorPoints = {color_points_js};
         const totalCr = 5.0;
-        const ka2 = 1.26e-6;
-        const kDimer = 15.8;
+        const ka1 = 2.94e-2;
+        const ka2 = 3.0e-7;
+        const kDimer = 1 / ka1;
         let ph = 7.0;
 
         const root = document.getElementById('cr-sim-root');
@@ -1160,15 +1161,10 @@ def localize_warning(warning: str, lang: str) -> str:
             " was routed to the nearest trained pH submodel: ",
             " 已路由至最接近的已训练 pH 子模型：",
         )
-    if "mass-balance CrO4^2- estimate was negative" in warning:
-        return (
-            "物料衡算得到的 CrO₄²⁻ 为负值，显示时已截断为零；"
-            "这通常表示由差值计算得到的 CrO₄²⁻ 项存在放大的预测误差。"
-        )
     if "At higher pH values" in warning:
         return (
-            "在较高 pH 下，CrO₄²⁻ 由差值计算得到，"
-            "因此对直接预测物种的微小误差更加敏感。"
+            "在较高 pH 下，样本仍位于训练范围内，但规则置信评分较低；"
+            "请核查图像条件并谨慎解释结果。"
         )
     return warning
 
@@ -1207,12 +1203,18 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     d2.metric(text(lang, "mass_balance_residual"), f"{residual:.4f} mM")
     d3.metric("pH", f"{ph:.1f}")
 
-    st.caption("输入 pH → 图像处理 → 提取 a* → 回归预测 → 质量守恒 → 化学解释")
+    st.caption(
+        "输入 pH → 图像处理 → 提取 a* → 三组分回归预测 → 总 Cr 质量守恒计算 → 化学解释"
+        if lang == "zh"
+        else "Input pH → image processing → a* extraction → three-species regression → total Cr mass balance → interpretation"
+    )
     st.write("提取的 Lab a*：", result.get("features_used", {}).get("lab", [None, None, None])[1])
-    st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": "模型预测"},
-                  {"物种": "HCrO4-", "浓度 mM": hcro4, "来源": "模型预测"},
-                  {"物种": "Cr2O7²-", "浓度 mM": cr2o7, "来源": "模型预测"},
-                  {"物种": "CrO4²-", "浓度 mM": cro4, "来源": "质量守恒计算"}])
+    source_direct = "模型直接预测" if lang == "zh" else "Direct model prediction"
+    source_balance = "质量守恒计算" if lang == "zh" else "Mass-balance calculation"
+    st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": source_balance},
+                  {"物种": "HCrO4-", "浓度 mM": hcro4, "来源": source_direct},
+                  {"物种": "Cr2O7²-", "浓度 mM": cr2o7, "来源": source_direct},
+                  {"物种": "CrO4²-", "浓度 mM": cro4, "来源": source_direct}])
     st.bar_chart({"HCrO4-": [hcro4], "Cr2O7²-（按 Cr 计）": [2 * cr2o7], "CrO4²-": [cro4]}, stack=True)
     st.caption("堆叠图单位 mM（按 Cr 原子计）；预测结果不是经认证的测量结果。")
     info = result.get("species_model_info", {})

@@ -102,7 +102,7 @@ $$
 A_{\mathrm{total}}=\sum_i \varepsilon_i b c_i
 $$
 
-This is why the current model predicts the visible-ion system by combining image color features with pH and equilibrium calculations.
+This is why the current model combines image color features with pH-based routing to predict the three visible chromium species directly.
 
 ## 7. Why total Cr(VI) is not always the best direct target
 
@@ -115,9 +115,8 @@ $$
 \text{image}+\mathrm{pH}
 &\longrightarrow \text{illumination standardization}\\
 &\longrightarrow \text{color-feature extraction}\\
-&\longrightarrow \text{prediction of }\mathrm{HCrO_4^-}\text{ and }\mathrm{Cr_2O_7^{2-}}\\
-&\longrightarrow \text{calculation of }\mathrm{CrO_4^{2-}}\text{ using }K_{a,2}\\
-&\longrightarrow \text{estimated total Cr(VI)}
+&\longrightarrow \text{direct prediction of }\mathrm{HCrO_4^-}\text{, }\mathrm{Cr_2O_7^{2-}}\text{, and }\mathrm{CrO_4^{2-}}\\
+&\longrightarrow \text{total Cr(VI) calculated by chromium mass balance}
 \end{aligned}
 $$
 

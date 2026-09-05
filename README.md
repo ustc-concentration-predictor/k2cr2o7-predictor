@@ -20,7 +20,7 @@ An intelligent solution concentration detection tool based on image color analys
 - 📷 Upload cuvette photo for concentration prediction
 - 🎨 Automatic extraction of RGB/HSV/Lab color features
 - 📊 Real-time prediction results with confidence scores
-- 🔬 Supports pH 2-12, concentration 1-8 mM range
+- 🔬 Trained for pH 3-8; inputs outside that range are flagged as out of domain
 - 📱 Responsive web design
 - 💯 Completely free deployment
 
@@ -57,11 +57,11 @@ Visit: http://localhost:8501
 ## 📖 Usage Instructions
 
 1. Open the web page, upload a cropped cuvette photo
-2. Enter the solution pH value (2-12)
+2. Enter the solution pH value (the trained range is pH 3-8)
 3. Click the "Predict" button
 4. View concentration results, confidence, and species distribution
 
-**⚠️ Note**: Please use solutions with concentration 1-8 mM and pH 2-12
+**⚠️ Note**: Predictions outside pH 3-8 are outside the model's training range and require cautious interpretation.
 
 ### Photography Tips
 
@@ -76,17 +76,18 @@ Visit: http://localhost:8501
 ## 🏗️ Technical Architecture
 
 ```
-Frontend (Streamlit) ←→ Backend (FastAPI) ←→ ML Model (Random Forest)
+Frontend (Streamlit) ←→ Backend (FastAPI) ←→ pH-specific GradientBoostingRegressor
      Vercel              Render              Joblib
 ```
 
 ### Model Information
 
-- **Type**: Random Forest Regressor
-- **Features**: 16-dimensional (pH + RGB + HSV + Lab + ratios)
-- **Training Data**: 30 potassium dichromate solution samples
-- **Accuracy**: MAE = 0.37 mM, 93.3% samples with error < 1mM
-- **Applicable Range**: pH 2-12, concentration 1-8 mM
+- **Type**: pH-specific GradientBoostingRegressor submodels
+- **Feature**: Lab `a*`; pH routes to the nearest trained submodel
+- **Equilibrium constant**: K₂ = 3.0×10⁻⁷
+- **Direct predictions**: HCrO₄⁻, Cr₂O₇²⁻, and CrO₄²⁻
+- **Mass-balance output**: total Cr(VI) = HCrO₄⁻ + 2×Cr₂O₇²⁻ + CrO₄²⁻
+- **Applicable range**: pH 3-8; use the model package and `/model/info` for performance metrics
 
 ---
 

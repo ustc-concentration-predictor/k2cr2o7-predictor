@@ -50,14 +50,14 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "prediction": "Model Prediction",
         "workflow": (
             "Workflow: upload an ROI image and pH, standardize illumination, "
-            "extract the Lab a feature, predict total Cr(VI), HCrO₄⁻, and "
-            "Cr₂O₇²⁻, then compute CrO₄²⁻ by mass balance."
+            "extract the Lab a feature, directly predict HCrO₄⁻, Cr₂O₇²⁻, "
+            "and CrO₄²⁻, then compute total Cr(VI) by mass balance."
         ),
         "sample_image": "Sample image",
         "select_photo": "Select photo",
         "training_note": (
-            "The deployed model is trained for pH 3–8. At pH 7–8, "
-            "CrO₄²⁻ uncertainty may be amplified."
+            "The deployed Ka₂=3.0×10⁻⁷ model is trained for pH 3–8. "
+            "Total Cr(VI) is calculated from the three predicted species."
         ),
         "predict": "Predict",
         "analyzing": "Analyzing ROI image...",
@@ -67,7 +67,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "upload_first": "Upload a photo, then select the cuvette region.",
         "equilibrium_basis": "Equilibrium basis",
         "prediction_completed": "Prediction completed.",
-        "estimated_total": "Estimated total Cr(VI)",
+        "estimated_total": "Calculated total Cr(VI)",
         "confidence": "Confidence",
         "mass_balance_residual": "Mass-balance residual",
         "result_assistant": 'Prediction assessment assistant',
@@ -130,12 +130,12 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "prediction": "模型预测",
         "workflow": (
             "流程：上传感兴趣区域（ROI）图像并输入 pH，进行光照标准化，"
-            "提取 Lab a 特征，预测总 Cr(VI)、HCrO₄⁻ 和 Cr₂O₇²⁻，"
-            "再依据物料衡算计算 CrO₄²⁻。"
+            "提取 Lab a 特征，直接预测 HCrO₄⁻、Cr₂O₇²⁻ 和 CrO₄²⁻，"
+            "再依据铬元素质量守恒计算总 Cr(VI)。"
         ),
         "sample_image": "样品图像",
         "select_photo": "选择样品照片",
-        "training_note": "当前模型的训练范围为 pH 3–8；在 pH 7–8 时，CrO₄²⁻ 的不确定性可能增大。",
+        "training_note": "当前为 Ka₂=3.0×10⁻⁷ 模型，训练范围为 pH 3–8；总 Cr(VI) 由三个直接预测物种计算。",
         "predict": "开始预测",
         "analyzing": "正在分析所选图像区域……",
         "roi_preview": "感兴趣区域预览",
@@ -144,7 +144,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "upload_first": "请先上传照片，再框选比色皿区域。",
         "equilibrium_basis": "平衡计算依据",
         "prediction_completed": "预测完成。",
-        "estimated_total": "估算总 Cr(VI)",
+        "estimated_total": "守恒计算总 Cr(VI)",
         "confidence": "置信度",
         "mass_balance_residual": "物料衡算残差",
         "result_assistant": '预测结果评估助手',

@@ -36,8 +36,8 @@ except Exception as exc:
 
 app = FastAPI(
     title="K2Cr2O7 Species Prediction API",
-    description="ML species prediction with chromium(VI) equilibrium calculation.",
-    version="2.0.0",
+    description="Three-species ML prediction with total Cr(VI) calculated by mass balance.",
+    version="3.0.0-ka2-3e-7",
 )
 
 app.add_middleware(
@@ -55,7 +55,7 @@ class PredictRequest(BaseModel):
 
 
 class PredictResponse(BaseModel):
-    concentration: float = Field(..., description="Estimated total Cr(VI), mM")
+    concentration: float = Field(..., description="Mass-balance total Cr(VI), mM")
     confidence: float = Field(..., ge=0, le=1)
     features_used: Dict[str, Any]
     species_concentrations: Dict[str, float]
@@ -156,7 +156,7 @@ def run_prediction(image_bytes: bytes, ph: float) -> PredictResponse:
         species_model_info=species_result["model_info"],
         warnings=species_result["warnings"],
         success=True,
-        message="Species prediction completed.",
+        message="Three species predicted; total Cr(VI) calculated by mass balance.",
     )
 
 
@@ -164,7 +164,7 @@ def run_prediction(image_bytes: bytes, ph: float) -> PredictResponse:
 async def root() -> Dict[str, Any]:
     return {
         "name": "K2Cr2O7 Species Prediction API",
-        "version": "2.0.0",
+        "version": "3.0.0-ka2-3e-7",
         "endpoints": {
             "predict": "/predict",
             "predict_base64": "/predict/base64",

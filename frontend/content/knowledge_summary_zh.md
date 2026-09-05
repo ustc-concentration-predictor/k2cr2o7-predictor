@@ -100,7 +100,7 @@ $$
 A_{\mathrm{total}}=\sum_i \varepsilon_i b c_i
 $$
 
-因此，当前模型将图像颜色特征与 pH 和化学平衡计算相结合，用于预测可见铬物种的浓度。
+因此，当前模型将图像颜色特征与 pH 路由相结合，用于直接预测三种可见铬物种的浓度。
 
 ## 7. 为什么总 Cr(VI) 不一定是最佳直接预测目标
 
@@ -113,9 +113,8 @@ $$
 \text{图像}+\mathrm{pH}
 &\longrightarrow \text{光照标准化}\\
 &\longrightarrow \text{颜色特征提取}\\
-&\longrightarrow \text{预测 }\mathrm{HCrO_4^-}\text{ 和 }\mathrm{Cr_2O_7^{2-}}\\
-&\longrightarrow \text{利用 }K_{a,2}\text{ 计算 }\mathrm{CrO_4^{2-}}\\
-&\longrightarrow \text{估算总 Cr(VI)}
+&\longrightarrow \text{直接预测 }\mathrm{HCrO_4^-}\text{、}\mathrm{Cr_2O_7^{2-}}\text{ 和 }\mathrm{CrO_4^{2-}}\\
+&\longrightarrow \text{依据铬元素守恒计算总 Cr(VI)}
 \end{aligned}
 $$
 
