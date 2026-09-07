@@ -2,3 +2,8 @@ streamlit==1.60.0
 requests
 Pillow
 streamlit-cropper
+numpy
+pandas
+scikit-learn==1.8.0
+joblib
+opencv-python-headless

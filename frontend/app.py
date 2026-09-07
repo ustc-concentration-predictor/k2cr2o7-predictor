@@ -307,7 +307,8 @@ def predict(image_bytes: bytes, ph: float, filename: str) -> Dict[str, Any]:
             timeout=60,
         )
         if response.status_code == 200:
-            return response.json()
+            from temperature_fallback import complete_temperature
+            return complete_temperature(response.json(), ph, image_bytes)
         try:
             detail = response.json().get("detail", response.text)
         except ValueError:
@@ -1172,6 +1173,8 @@ def localize_warning(warning: str, lang: str) -> str:
 
 
 def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
+    from temperature_fallback import complete_temperature
+    result = complete_temperature(result, ph)
     lang = st.session_state.language
     species = result.get("species_concentrations") or {}
     total_cr = float(species.get("estimated_total_cr_mM", result.get("concentration", 0.0)))
@@ -1220,6 +1223,8 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
                  column_config={"浓度 mM": st.column_config.NumberColumn(format="%.4f")})
     st.bar_chart({"HCrO4-": [hcro4], "Cr2O7²-（按 Cr 计）": [2 * cr2o7], "CrO4²-": [cro4]}, stack=True)
     for warning in result.get("warnings", []):
+        if "Training color-feature ranges are unavailable" in warning:
+            continue
         st.warning(localize_warning(warning, lang))
 
 
