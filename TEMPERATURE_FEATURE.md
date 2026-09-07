@@ -1,3 +1,11 @@
+# Current display policy (updated)
+
+Temperature inference now selects high when the classifier score is >= 0.5, otherwise low. Abstention and min/max range rejection are disabled at the user’s request. Invalid inputs or missing models return an unavailable service status, not a fabricated class. The earlier 89.7% accuracy applies only to the former selective policy; the current binary policy has grouped validation accuracy 46/56 (82.1%). No retraining was required.
+
+The results UI uses responsive concentration cards with four decimal places and units in the label. It omits the former temperature explanatory captions, heuristic score, residual/pH metrics, pipeline caption, and model metadata/evaluation section. Missing training color-range warnings remain available and are localized in Chinese.
+
+## Historical training and validation record
+
 # Experimental temperature tendency
 
 Both prediction endpoints return `temperature_tendency`: status `low`, `high`, or `uncertain`, plus a machine-readable reason. Streamlit displays a bilingual qualitative result without a probability or measured temperature. Missing models do not interrupt concentration prediction. Restart the backend after replacing the cached model.

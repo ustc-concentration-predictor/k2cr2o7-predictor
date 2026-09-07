@@ -1150,6 +1150,8 @@ def localize_warning(warning: str, lang: str) -> str:
     """Translate known backend model warnings for the Chinese UI."""
     if lang != "zh":
         return warning
+    if "Training color-feature ranges are unavailable" in warning:
+        return "模型未保存训练照片的颜色特征范围，因此暂不能检查当前照片是否处于模型适用范围；这不表示浓度预测失败。"
     if "outside the training range" in warning:
         return (
             warning.replace(" is outside the training range (", " 超出模型训练范围（")
@@ -1192,55 +1194,31 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     }
 
     st.success(text(lang, "prediction_completed"))
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("HCrO₄⁻", f"{hcro4:.4f} mM")
-    c2.metric("Cr₂O₇²⁻", f"{cr2o7:.4f} mM")
-    c3.metric("CrO₄²⁻", f"{cro4:.4f} mM")
-    c4.metric(text(lang, "estimated_total"), f"{total_cr:.4f} mM")
+    # Responsive cards avoid Streamlit metric ellipsis inside the narrow results column.
+    cards = [("HCrO₄⁻", hcro4), ("Cr₂O₇²⁻", cr2o7), ("CrO₄²⁻", cro4),
+             ("总 Cr(VI)" if lang == "zh" else "Total Cr(VI)", total_cr)]
+    st.markdown(
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:16px">'
+        + ''.join(f'<div><div>{label} (mM)</div><div style="font-size:26px;line-height:1.5;overflow-wrap:anywhere">{value:.4f}</div></div>'
+                  for label, value in cards) + '</div>', unsafe_allow_html=True)
 
     tendency = result.get('temperature_tendency') or {}
-    status = tendency.get('status', 'uncertain')
-    labels = {'low': ('偏低温', 'Lower temperature'), 'high': ('偏高温', 'Higher temperature'),
-              'uncertain': ('无法明确判断', 'Inconclusive')}
-    st.metric('温度倾向（实验性）' if lang == 'zh' else 'Temperature tendency (experimental)',
-              labels.get(status, labels['uncertain'])[0 if lang == 'zh' else 1])
+    status = tendency.get('status')
     if status in ('low', 'high'):
-        reference = 25 if status == 'low' else 45
-        st.caption(f'照片颜色与输入 pH 更接近 {reference}℃参考样本。' if lang == 'zh'
-                   else f'Image color and input pH are closer to the {reference}°C reference samples.')
+        labels = {'low': ('偏低温', 'Lower temperature'), 'high': ('偏高温', 'Higher temperature')}
+        st.metric('温度倾向' if lang == 'zh' else 'Temperature tendency', labels[status][0 if lang == 'zh' else 1])
     else:
-        reasons = {'out_of_range': ('输入超出温度模型训练范围。', 'Input is outside the temperature training range.'),
-                   'unavailable': ('温度模型暂不可用。', 'Temperature model is unavailable.'),
-                   'ambiguous': ('两档温度的颜色证据不足以明确区分。', 'Color evidence does not clearly distinguish the two temperature groups.')}
-        reason = tendency.get('reason', 'unavailable')
-        st.caption(reasons.get(reason, reasons['ambiguous'])[0 if lang == 'zh' else 1])
-    st.caption('仅比较25℃与45℃参考数据，不代表实测温度；T50沿用旧记录的45℃标签，光照与拍摄批次也可能影响判断。'
-               if lang == 'zh' else 'Compares 25°C and 45°C reference data; this is not a temperature measurement. T50 retains the historical 45°C label. Lighting and acquisition batch may affect the result.')
+        st.caption('温度功能暂不可用，请检查后端模型。' if lang == 'zh' else 'Temperature feature unavailable; check the backend model.')
 
-    d1, d2, d3 = st.columns(3)
-    d1.metric(text(lang, "heuristic_score"), f"{float(result.get('confidence', 0.0)):.2f}")
-    d2.metric(text(lang, "mass_balance_residual"), f"{residual:.4f} mM")
-    d3.metric("pH", f"{ph:.1f}")
-
-    st.caption(
-        "输入 pH → 图像处理 → 提取 a* → 三组分回归预测 → 总 Cr 质量守恒计算 → 化学解释"
-        if lang == "zh"
-        else "Input pH → image processing → a* extraction → three-species regression → total Cr mass balance → interpretation"
-    )
     st.write("提取的 Lab a*：", result.get("features_used", {}).get("lab", [None, None, None])[1])
     source_direct = "模型直接预测" if lang == "zh" else "Direct model prediction"
     source_balance = "质量守恒计算" if lang == "zh" else "Mass-balance calculation"
     st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": source_balance},
                   {"物种": "HCrO4-", "浓度 mM": hcro4, "来源": source_direct},
                   {"物种": "Cr2O7²-", "浓度 mM": cr2o7, "来源": source_direct},
-                  {"物种": "CrO4²-", "浓度 mM": cro4, "来源": source_direct}])
+                  {"物种": "CrO4²-", "浓度 mM": cro4, "来源": source_direct}],
+                 column_config={"浓度 mM": st.column_config.NumberColumn(format="%.4f")})
     st.bar_chart({"HCrO4-": [hcro4], "Cr2O7²-（按 Cr 计）": [2 * cr2o7], "CrO4²-": [cro4]}, stack=True)
-    st.caption("堆叠图单位 mM（按 Cr 原子计）；预测结果不是经认证的测量结果。")
-    info = result.get("species_model_info", {})
-    st.write("模型版本：", info.get("model_version", "未知"), "有效 pH：", info.get("valid_ph_range"))
-    st.write("训练浓度范围：", info.get("training_concentration_range_mM") or "未知（模型包未提供）")
-    st.dataframe(info.get("external_test_metrics", []))
-
     for warning in result.get("warnings", []):
         st.warning(localize_warning(warning, lang))
 
