@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from tutor import ask_tutor
 from image_processor import preprocess_image
 from species_model import get_species_predictor
+from temperature_model import predict_temperature
 
 
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +61,7 @@ class PredictResponse(BaseModel):
     features_used: Dict[str, Any]
     species_concentrations: Dict[str, float]
     species_model_info: Dict[str, Any]
+    temperature_tendency: Dict[str, Any] = Field(default_factory=dict)
     warnings: List[str] = []
     success: bool
     message: str = ""
@@ -154,6 +156,7 @@ def run_prediction(image_bytes: bytes, ph: float) -> PredictResponse:
         features_used=build_features_used(preprocess_result, ph),
         species_concentrations={key: round(float(value), 6) for key, value in species.items()},
         species_model_info=species_result["model_info"],
+        temperature_tendency=predict_temperature(preprocess_result['features_dict'], ph),
         warnings=species_result["warnings"],
         success=True,
         message="Three species predicted; total Cr(VI) calculated by mass balance.",

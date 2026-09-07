@@ -1198,6 +1198,25 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     c3.metric("CrO₄²⁻", f"{cro4:.4f} mM")
     c4.metric(text(lang, "estimated_total"), f"{total_cr:.4f} mM")
 
+    tendency = result.get('temperature_tendency') or {}
+    status = tendency.get('status', 'uncertain')
+    labels = {'low': ('偏低温', 'Lower temperature'), 'high': ('偏高温', 'Higher temperature'),
+              'uncertain': ('无法明确判断', 'Inconclusive')}
+    st.metric('温度倾向（实验性）' if lang == 'zh' else 'Temperature tendency (experimental)',
+              labels.get(status, labels['uncertain'])[0 if lang == 'zh' else 1])
+    if status in ('low', 'high'):
+        reference = 25 if status == 'low' else 45
+        st.caption(f'照片颜色与输入 pH 更接近 {reference}℃参考样本。' if lang == 'zh'
+                   else f'Image color and input pH are closer to the {reference}°C reference samples.')
+    else:
+        reasons = {'out_of_range': ('输入超出温度模型训练范围。', 'Input is outside the temperature training range.'),
+                   'unavailable': ('温度模型暂不可用。', 'Temperature model is unavailable.'),
+                   'ambiguous': ('两档温度的颜色证据不足以明确区分。', 'Color evidence does not clearly distinguish the two temperature groups.')}
+        reason = tendency.get('reason', 'unavailable')
+        st.caption(reasons.get(reason, reasons['ambiguous'])[0 if lang == 'zh' else 1])
+    st.caption('仅比较25℃与45℃参考数据，不代表实测温度；T50沿用旧记录的45℃标签，光照与拍摄批次也可能影响判断。'
+               if lang == 'zh' else 'Compares 25°C and 45°C reference data; this is not a temperature measurement. T50 retains the historical 45°C label. Lighting and acquisition batch may affect the result.')
+
     d1, d2, d3 = st.columns(3)
     d1.metric(text(lang, "heuristic_score"), f"{float(result.get('confidence', 0.0)):.2f}")
     d2.metric(text(lang, "mass_balance_residual"), f"{residual:.4f} mM")
