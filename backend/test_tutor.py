@@ -320,7 +320,15 @@ class TutorTests(unittest.TestCase):
         self.assertEqual(result["model_info"]["target_cols"], ["HCrO4_mM", "Cr2O7_mM", "CrO4_mM"])
         self.assertEqual(result["model_info"]["computed_species"], ["total_cr_mM"])
         self.assertTrue(result["model_info"]["external_test_metrics"])
-        self.assertIsNone(result["model_info"]["training_feature_ranges"])
+        self.assertEqual(result["model_info"]["training_concentration_range_mM"], [1.0, 10.0])
+        self.assertIn("a", result["model_info"]["training_feature_ranges"])
+
+    def test_training_color_range_warning_depends_on_lab_a(self):
+        predictor = SpeciesPredictor()
+        in_range = predictor._generate_warnings(6.0, 6.0, {"a": 130.0})
+        out_of_range = predictor._generate_warnings(6.0, 6.0, {"a": 115.0})
+        self.assertFalse(any("color-feature range" in warning for warning in in_range))
+        self.assertTrue(any("Lab a*=115.000" in warning for warning in out_of_range))
 
 
 if __name__ == "__main__":

@@ -216,6 +216,20 @@ st.markdown(
         color: #101828 !important;
         background: #f2f4f7;
       }
+      [data-testid="stMetricValue"],
+      [data-testid="stMetricValue"] > div {
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+      }
+      [data-testid="stMetricValue"] > div {
+        font-size: clamp(1.55rem, 2.55vw, 2.65rem) !important;
+      }
+      .lab-a-note {
+        margin: -.35rem 0 .75rem;
+        color: #7a7f87;
+        font-size: .92rem;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -1166,6 +1180,20 @@ def localize_warning(warning: str, lang: str) -> str:
             "在较高 pH 下，样本仍位于训练范围内，但规则置信评分较低；"
             "请核查图像条件并谨慎解释结果。"
         )
+    if "Training color-feature ranges are unavailable" in warning:
+        return "模型未提供训练颜色特征范围，无法判断图像是否处于训练域内；请咨询教师。"
+    if "is outside the training color-feature range" in warning:
+        match = re.match(
+            r"Lab a\*=([^ ]+) is outside the training color-feature range for routed pH ([^ ]+) "
+            r"\(([^–]+)–([^\)]+)\); image domain validity is uncertain\. Consult your teacher\.",
+            warning,
+        )
+        if match:
+            value, routed_ph, lower, upper = match.groups()
+            return (
+                f"Lab a*={value} 超出所路由 pH {routed_ph} 子模型的训练颜色特征范围"
+                f"（{lower}–{upper}）；当前图像是否处于训练域内仍不确定，请咨询教师。"
+            )
     return warning
 
 
@@ -1208,18 +1236,63 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         if lang == "zh"
         else "Input pH → image processing → a* extraction → three-species regression → total Cr mass balance → interpretation"
     )
-    st.write("提取的 Lab a*：", result.get("features_used", {}).get("lab", [None, None, None])[1])
+    lab_a = result.get("features_used", {}).get("lab", [None, None, None])[1]
+    st.write(text(lang, "extracted_lab_a"), lab_a)
+    st.markdown(
+        f'<p class="lab-a-note">{text(lang, "lab_a_note")}</p>',
+        unsafe_allow_html=True,
+    )
     source_direct = "模型直接预测" if lang == "zh" else "Direct model prediction"
     source_balance = "质量守恒计算" if lang == "zh" else "Mass-balance calculation"
     st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": source_balance},
                   {"物种": "HCrO4-", "浓度 mM": hcro4, "来源": source_direct},
                   {"物种": "Cr2O7²-", "浓度 mM": cr2o7, "来源": source_direct},
                   {"物种": "CrO4²-", "浓度 mM": cro4, "来源": source_direct}])
-    st.bar_chart({"HCrO4-": [hcro4], "Cr2O7²-（按 Cr 计）": [2 * cr2o7], "CrO4²-": [cro4]}, stack=True)
-    st.caption("堆叠图单位 mM（按 Cr 原子计）；预测结果不是经认证的测量结果。")
+    chart_data = [
+        {"group": "Cr(VI)", "species": "HCrO₄⁻", "concentration": hcro4, "order": 1},
+        {"group": "Cr(VI)", "species": "Cr₂O₇²⁻ (×2 Cr)", "concentration": 2 * cr2o7, "order": 2},
+        {"group": "Cr(VI)", "species": "CrO₄²⁻", "concentration": cro4, "order": 3},
+    ]
+    st.vega_lite_chart(
+        chart_data,
+        {
+            "height": 150,
+            "mark": {"type": "bar", "size": 72},
+            "encoding": {
+                "y": {"field": "group", "type": "nominal", "title": None, "axis": {"labels": False, "ticks": False}},
+                "x": {
+                    "field": "concentration",
+                    "type": "quantitative",
+                    "stack": "zero",
+                    "title": "mM (Cr atom basis)",
+                    "scale": {"domain": [0, max(total_cr, 0.1)], "nice": False, "zero": True},
+                },
+                "color": {
+                    "field": "species",
+                    "type": "nominal",
+                    "scale": {"domain": ["HCrO₄⁻", "Cr₂O₇²⁻ (×2 Cr)", "CrO₄²⁻"],
+                              "range": ["#e6a23c", "#d97706", "#f4d03f"]},
+                    "legend": {"title": None, "orient": "bottom"},
+                },
+                "order": {"field": "order", "type": "ordinal"},
+                "tooltip": [
+                    {"field": "species", "type": "nominal", "title": "Species"},
+                    {"field": "concentration", "type": "quantitative", "title": "mM", "format": ".4f"},
+                ],
+            },
+            "config": {"view": {"stroke": None}},
+        },
+        use_container_width=True,
+    )
+    st.caption(text(lang, "stacked_chart_note"))
     info = result.get("species_model_info", {})
-    st.write("模型版本：", info.get("model_version", "未知"), "有效 pH：", info.get("valid_ph_range"))
-    st.write("训练浓度范围：", info.get("training_concentration_range_mM") or "未知（模型包未提供）")
+    st.write(text(lang, "model_version"), info.get("model_version", text(lang, "unknown")))
+    concentration_range = info.get("training_concentration_range_mM")
+    if isinstance(concentration_range, (list, tuple)) and len(concentration_range) == 2:
+        range_text = f"{float(concentration_range[0]):g}–{float(concentration_range[1]):g} mM"
+    else:
+        range_text = text(lang, "unknown_model_metadata")
+    st.write(text(lang, "training_concentration_range"), range_text)
     st.dataframe(info.get("external_test_metrics", []))
 
     for warning in result.get("warnings", []):

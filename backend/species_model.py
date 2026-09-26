@@ -27,6 +27,25 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
+# The deployed artifact is the verified Ka2=3e-7 three-species model. Its
+# original package predates metadata fields for training-domain reporting, so
+# retain the ranges calculated from the exact 114-row training table here.
+DEPLOYED_TRAINING_CONCENTRATION_RANGE_MM = [1.0, 10.0]
+DEPLOYED_TRAINING_FEATURE_RANGES = {
+    "a": {
+        "overall": {"min": 120.32704081632652, "max": 141.85545267489712},
+        "by_ph": {
+            3.0: {"min": 125.83497732426304, "max": 140.72048672343428},
+            4.0: {"min": 125.23778344671202, "max": 141.85545267489712},
+            5.0: {"min": 125.19733333333332, "max": 140.70950035908484},
+            6.0: {"min": 124.43874382857432, "max": 139.0798279689234},
+            7.0: {"min": 121.89387654320988, "max": 130.8430410275106},
+            8.0: {"min": 120.32704081632652, "max": 122.90827771598072},
+        },
+    },
+}
+
+
 class SpeciesPredictor:
     """Predict chromium(VI) species from backend image features and pH."""
 
@@ -90,8 +109,13 @@ class SpeciesPredictor:
         self.computed_species = list(package.get("computed_species", self.computed_species))
         self.prediction_strategy = package.get("prediction_strategy", self.prediction_strategy)
         self.model_version = hashlib.sha256(self.model_path.read_bytes()).hexdigest()[:12]
-        self.training_feature_ranges = package.get("training_feature_ranges")
-        self.training_concentration_range_mM = package.get("training_concentration_range_mM")
+        self.training_feature_ranges = (
+            package.get("training_feature_ranges") or DEPLOYED_TRAINING_FEATURE_RANGES
+        )
+        self.training_concentration_range_mM = (
+            package.get("training_concentration_range_mM")
+            or DEPLOYED_TRAINING_CONCENTRATION_RANGE_MM
+        )
         self.mass_balance_formula = package.get("mass_balance_formula", self.mass_balance_formula)
         logger.info("Species model loaded: %s", self.model_name)
 
@@ -132,7 +156,7 @@ class SpeciesPredictor:
         total_cr_mM = hcro4_mM + 2.0 * cr2o7_mM + cro4_mM
         mass_balance_residual_mM = total_cr_mM - hcro4_mM - 2.0 * cr2o7_mM - cro4_mM
 
-        warnings = self._generate_warnings(ph, values["route_pH_model"])
+        warnings = self._generate_warnings(ph, values["route_pH_model"], feature_dict)
         confidence = self._calculate_confidence(ph)
 
         species = {
@@ -171,10 +195,26 @@ class SpeciesPredictor:
             return 0.75
         return 0.9
 
-    def _generate_warnings(self, ph: float, routed_ph: float) -> List[str]:
+    def _generate_warnings(
+        self, ph: float, routed_ph: float, feature_dict: Dict[str, float]
+    ) -> List[str]:
         warnings: List[str] = []
         if not self.training_feature_ranges:
             warnings.append("Training color-feature ranges are unavailable; image domain validity cannot be assessed. Consult your teacher.")
+        else:
+            a_metadata = self.training_feature_ranges.get("a", {})
+            by_ph = a_metadata.get("by_ph", {}) if isinstance(a_metadata, dict) else {}
+            bounds = by_ph.get(routed_ph) or by_ph.get(str(routed_ph))
+            if bounds and "a" in feature_dict:
+                a_value = float(feature_dict["a"])
+                lower = float(bounds["min"])
+                upper = float(bounds["max"])
+                if a_value < lower or a_value > upper:
+                    warnings.append(
+                        f"Lab a*={a_value:.3f} is outside the training color-feature range "
+                        f"for routed pH {routed_ph:g} ({lower:.3f}–{upper:.3f}); image domain "
+                        "validity is uncertain. Consult your teacher."
+                    )
         ph_min, ph_max = self.valid_ph_range
         if ph < ph_min or ph > ph_max:
             warnings.append(
