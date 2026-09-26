@@ -1249,15 +1249,15 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
 
     st.success(text(lang, "prediction_completed"))
     concentration_metrics = (
-        ("HCrO₄⁻", hcro4),
-        ("Cr₂O₇²⁻", cr2o7),
-        ("CrO₄²⁻", cro4),
-        (text(lang, "estimated_total"), total_cr),
+        ("HCrO₄⁻/mM", hcro4),
+        ("Cr₂O₇²⁻/mM", cr2o7),
+        ("CrO₄²⁻/mM", cro4),
+        (f"{text(lang, 'estimated_total')}/mM", total_cr),
     )
     metric_cards = "".join(
         '<div class="concentration-metric-card">'
         f'<div class="concentration-metric-label">{escape(label)}</div>'
-        f'<div class="concentration-metric-value">{value:.4f} mM</div>'
+        f'<div class="concentration-metric-value">{value:.4f}</div>'
         "</div>"
         for label, value in concentration_metrics
     )
