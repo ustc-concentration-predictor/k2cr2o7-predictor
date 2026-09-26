@@ -6,6 +6,7 @@ import io
 import os
 import re
 from datetime import datetime
+from html import escape
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlsplit
@@ -216,14 +217,41 @@ st.markdown(
         color: #101828 !important;
         background: #f2f4f7;
       }
-      [data-testid="stMetricValue"],
-      [data-testid="stMetricValue"] > div {
-        overflow: visible !important;
-        text-overflow: clip !important;
-        white-space: nowrap !important;
+      .concentration-metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.35rem;
+        margin: 1.25rem 0 1.65rem;
       }
-      [data-testid="stMetricValue"] > div {
-        font-size: clamp(1.55rem, 2.55vw, 2.65rem) !important;
+      .concentration-metric-card {
+        min-width: 0;
+      }
+      .concentration-metric-label {
+        min-height: 1.75rem;
+        margin-bottom: .4rem;
+        color: #31333f;
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+      .concentration-metric-value {
+        color: #31333f;
+        font-size: clamp(1.65rem, 2.65vw, 2.7rem);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.15;
+        white-space: nowrap;
+      }
+      @media (max-width: 900px) {
+        .concentration-metric-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .concentration-metric-value {
+          font-size: clamp(1.75rem, 5.2vw, 2.7rem);
+        }
+      }
+      @media (max-width: 520px) {
+        .concentration-metric-grid {
+          grid-template-columns: 1fr;
+        }
       }
       .lab-a-note {
         margin: -.35rem 0 .75rem;
@@ -1220,11 +1248,23 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     }
 
     st.success(text(lang, "prediction_completed"))
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("HCrO₄⁻", f"{hcro4:.4f} mM")
-    c2.metric("Cr₂O₇²⁻", f"{cr2o7:.4f} mM")
-    c3.metric("CrO₄²⁻", f"{cro4:.4f} mM")
-    c4.metric(text(lang, "estimated_total"), f"{total_cr:.4f} mM")
+    concentration_metrics = (
+        ("HCrO₄⁻", hcro4),
+        ("Cr₂O₇²⁻", cr2o7),
+        ("CrO₄²⁻", cro4),
+        (text(lang, "estimated_total"), total_cr),
+    )
+    metric_cards = "".join(
+        '<div class="concentration-metric-card">'
+        f'<div class="concentration-metric-label">{escape(label)}</div>'
+        f'<div class="concentration-metric-value">{value:.4f} mM</div>'
+        "</div>"
+        for label, value in concentration_metrics
+    )
+    st.markdown(
+        f'<div class="concentration-metric-grid">{metric_cards}</div>',
+        unsafe_allow_html=True,
+    )
 
     d1, d2, d3 = st.columns(3)
     d1.metric(text(lang, "heuristic_score"), f"{float(result.get('confidence', 0.0)):.2f}")
