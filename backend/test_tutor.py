@@ -7,7 +7,8 @@ import numpy as np
 import requests
 
 from species_model import SpeciesPredictor
-from tutor import NOTICE, SCHEMAS, ask_tutor, build_messages, completion_endpoint, parse_answer
+from tutor import (NOTICE, SCHEMAS, ask_tutor, build_messages, completion_endpoint,
+                   parse_answer, schema_for_request)
 
 
 def provider_response(value):
@@ -276,10 +277,35 @@ class TutorTests(unittest.TestCase):
         answer = {k: "示例评估" for k in SCHEMAS["prediction_analysis"]}
         post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
                             provider_response({"decision": "allow"})]
-        result = ask_tutor("评估", [], "prediction_analysis", {"pH": 6}, "test-key", "https://api.deepseek.com", "test-model")
+        result = ask_tutor("全面评估本次结果", [], "prediction_analysis", {"pH": 6}, "test-key", "https://api.deepseek.com", "test-model")
         self.assertIn("**可靠性评估**", result["reply"])
         self.assertIn(NOTICE, result["reply"])
         self.assertIn("适用范围提示", result["reply"])
+
+    @patch("tutor.requests.post")
+    def test_prediction_quick_prompt_uses_only_selected_section(self, post):
+        answer = {"reliability": "只解释本次结果的可靠性。"}
+        post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
+                            provider_response({"decision": "allow"})]
+        result = ask_tutor("可靠性评估", [], "prediction_analysis", {"pH": 6},
+                           "test-key", "https://api.deepseek.com", "test-model")
+        self.assertIn("**可靠性评估**", result["reply"])
+        self.assertNotIn("**输入与特征**", result["reply"])
+        self.assertNotIn("**预测结果**", result["reply"])
+        generation_messages = post.call_args_list[1].kwargs["json"]["messages"]
+        self.assertIn("### reliability", generation_messages[0]["content"])
+        self.assertNotIn("### observations", generation_messages[0]["content"])
+
+    @patch("tutor.requests.post")
+    def test_prediction_free_question_uses_direct_answer(self, post):
+        answer = {"answer": "MAE 是平均绝对误差，数值越小通常表示整体偏差越小。"}
+        post.side_effect = [provider_response({"decision": "allow"}), provider_response(answer),
+                            provider_response({"decision": "allow"})]
+        result = ask_tutor("MAE 是什么意思？", [], "prediction_analysis", {"pH": 6},
+                           "test-key", "https://api.deepseek.com", "test-model")
+        self.assertIn("**回答**", result["reply"])
+        self.assertNotIn("**计算与一致性**", result["reply"])
+        self.assertEqual(list(schema_for_request("prediction_analysis", "MAE 是什么意思？")), ["answer"])
 
     @patch("tutor.requests.post")
     def test_wrong_mode_schema_is_rejected(self, post):

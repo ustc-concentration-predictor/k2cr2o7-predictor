@@ -457,6 +457,30 @@ def render_chat_panel(
         with st.chat_message(msg["role"]):
             st.markdown(format_chat_math(msg["content"]) if msg["role"] == "assistant" else msg["content"])
 
+    quick_prompt = None
+    if mode == "prediction_analysis":
+        quick_prompts = (
+            ("输入与特征", "Inputs and features"),
+            ("预测结果", "Prediction results"),
+            ("计算与一致性", "Calculations and consistency"),
+            ("可靠性评估", "Reliability assessment"),
+            ("核查建议", "Suggested checks"),
+            ("不确定性", "Uncertainty"),
+            ("全面评估本次结果", "Comprehensive assessment of this result"),
+        )
+        rows = (quick_prompts[:4], quick_prompts[4:])
+        for row_index, row in enumerate(rows):
+            columns = st.columns(len(row))
+            for item_index, (zh_label, en_label) in enumerate(row):
+                label = en_label if lang == "en" else zh_label
+                if columns[item_index].button(
+                    label,
+                    key=f"{state_key}_quick_{row_index}_{item_index}",
+                    use_container_width=True,
+                    disabled=not bool(prediction_context),
+                ):
+                    quick_prompt = label
+
     with st.form(f"{state_key}_form", clear_on_submit=True):
         prompt = st.text_area(
             text(lang, "message"),
@@ -466,11 +490,12 @@ def render_chat_panel(
         )
         submitted = st.form_submit_button(text(lang, "send"))
 
-    if submitted and prompt.strip():
-        user_message = {"role": "user", "content": prompt.strip()}
+    submitted_prompt = quick_prompt or (prompt.strip() if submitted else "")
+    if submitted_prompt:
+        user_message = {"role": "user", "content": submitted_prompt}
         messages.append(user_message)
         with st.spinner(text(lang, "waiting_model")):
-            result = ask_llm(prompt.strip(), messages[:-1], mode, prediction_context)
+            result = ask_llm(submitted_prompt, messages[:-1], mode, prediction_context)
         keep_context = not result.get("error") and result.get("scope_status") not in (
             "off_topic", "redirect_query", "redirect_prediction", "block"
         )
