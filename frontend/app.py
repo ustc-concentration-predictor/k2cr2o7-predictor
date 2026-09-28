@@ -258,6 +258,9 @@ st.markdown(
         color: #7a7f87;
         font-size: .92rem;
       }
+      .result-section-spacer {
+        height: 1rem;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -1275,12 +1278,14 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         if lang == "zh"
         else "Input pH → image processing → a* extraction → three-species regression → total Cr mass balance → interpretation"
     )
+    st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)
     lab_a = result.get("features_used", {}).get("lab", [None, None, None])[1]
     st.write(text(lang, "extracted_lab_a"), lab_a)
     st.markdown(
         f'<p class="lab-a-note">{text(lang, "lab_a_note")}</p>',
         unsafe_allow_html=True,
     )
+    st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)
     source_direct = "模型直接预测" if lang == "zh" else "Direct model prediction"
     source_balance = "质量守恒计算" if lang == "zh" else "Mass-balance calculation"
     st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": source_balance},
@@ -1324,6 +1329,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         use_container_width=True,
     )
     st.caption(text(lang, "stacked_chart_note"))
+    st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)
     info = result.get("species_model_info", {})
     st.write(text(lang, "model_version"), info.get("model_version", text(lang, "unknown")))
     concentration_range = info.get("training_concentration_range_mM")
@@ -1332,6 +1338,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     else:
         range_text = text(lang, "unknown_model_metadata")
     st.write(text(lang, "training_concentration_range"), range_text)
+    st.markdown(f"#### {text(lang, 'external_test_metrics_heading')}")
     st.dataframe(info.get("external_test_metrics", []))
 
     for warning in result.get("warnings", []):
