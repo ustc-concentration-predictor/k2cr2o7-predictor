@@ -1134,30 +1134,29 @@ def render_introduction() -> None:
     else:
         st.warning(text(lang, "intro_missing"))
 
-    if intro_version == "detailed":
-        st.markdown(
-            '<div class="intro-action-spacer" aria-hidden="true"></div>',
-            unsafe_allow_html=True,
+    st.markdown(
+        '<div class="intro-action-spacer" aria-hidden="true"></div>',
+        unsafe_allow_html=True,
+    )
+    with st.container(key="intro_actions"):
+        left, right = st.columns(2)
+        left.button(
+            f"💬 {text(lang, 'ask_more')}",
+            use_container_width=True,
+            on_click=set_module,
+            args=("query",),
         )
-        with st.container(key="intro_actions"):
-            left, right = st.columns(2)
-            left.button(
-                f"💬 {text(lang, 'ask_more')}",
-                use_container_width=True,
-                on_click=set_module,
-                args=("query",),
-            )
-            right.button(
-                f"📷 {text(lang, 'start_prediction')}",
-                use_container_width=True,
-                type="primary",
-                on_click=set_module,
-                args=("prediction",),
-            )
-        st.markdown(
-            '<div class="intro-action-spacer" aria-hidden="true"></div>',
-            unsafe_allow_html=True,
+        right.button(
+            f"📷 {text(lang, 'start_prediction')}",
+            use_container_width=True,
+            type="primary",
+            on_click=set_module,
+            args=("prediction",),
         )
+    st.markdown(
+        '<div class="intro-action-spacer" aria-hidden="true"></div>',
+        unsafe_allow_html=True,
+    )
 
     render_ph_equilibrium_simulator(lang)
 
