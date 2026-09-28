@@ -261,6 +261,9 @@ st.markdown(
       .result-section-spacer {
         height: 1rem;
       }
+      .result-section-spacer-double {
+        height: 2rem;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -1278,7 +1281,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         if lang == "zh"
         else "Input pH → image processing → a* extraction → three-species regression → total Cr mass balance → interpretation"
     )
-    st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="result-section-spacer-double" aria-hidden="true"></div>', unsafe_allow_html=True)
     lab_a = result.get("features_used", {}).get("lab", [None, None, None])[1]
     st.write(text(lang, "extracted_lab_a"), lab_a)
     st.markdown(
@@ -1286,15 +1289,21 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         unsafe_allow_html=True,
     )
     st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)
-    source_direct = "模型直接预测" if lang == "zh" else "Direct model prediction"
-    source_balance = "质量守恒计算" if lang == "zh" else "Mass-balance calculation"
-    st.dataframe([{"物种": "总 Cr(VI)", "浓度 mM": total_cr, "来源": source_balance},
-                  {"物种": "HCrO4-", "浓度 mM": hcro4, "来源": source_direct},
-                  {"物种": "Cr2O7²-", "浓度 mM": cr2o7, "来源": source_direct},
-                  {"物种": "CrO4²-", "浓度 mM": cro4, "来源": source_direct}])
+    source_direct = text(lang, "source_direct_prediction")
+    source_balance = text(lang, "source_mass_balance")
+    species_column = text(lang, "species_column")
+    concentration_column = text(lang, "concentration_mM_column")
+    source_column = text(lang, "source_column")
+    st.dataframe([
+        {species_column: text(lang, "total_cr_species"), concentration_column: total_cr, source_column: source_balance},
+        {species_column: "HCrO₄⁻", concentration_column: hcro4, source_column: source_direct},
+        {species_column: "Cr₂O₇²⁻", concentration_column: cr2o7, source_column: source_direct},
+        {species_column: "CrO₄²⁻", concentration_column: cro4, source_column: source_direct},
+    ])
+    dichromate_chart_label = text(lang, "dichromate_cr_basis")
     chart_data = [
         {"group": "Cr(VI)", "species": "HCrO₄⁻", "concentration": hcro4, "order": 1},
-        {"group": "Cr(VI)", "species": "Cr₂O₇²⁻ (×2 Cr)", "concentration": 2 * cr2o7, "order": 2},
+        {"group": "Cr(VI)", "species": dichromate_chart_label, "concentration": 2 * cr2o7, "order": 2},
         {"group": "Cr(VI)", "species": "CrO₄²⁻", "concentration": cro4, "order": 3},
     ]
     st.vega_lite_chart(
@@ -1308,19 +1317,19 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
                     "field": "concentration",
                     "type": "quantitative",
                     "stack": "zero",
-                    "title": "mM (Cr atom basis)",
+                    "title": text(lang, "chart_cr_basis_title"),
                     "scale": {"domain": [0, max(total_cr, 0.1)], "nice": False, "zero": True},
                 },
                 "color": {
                     "field": "species",
                     "type": "nominal",
-                    "scale": {"domain": ["HCrO₄⁻", "Cr₂O₇²⁻ (×2 Cr)", "CrO₄²⁻"],
+                    "scale": {"domain": ["HCrO₄⁻", dichromate_chart_label, "CrO₄²⁻"],
                               "range": ["#e6a23c", "#d97706", "#f4d03f"]},
                     "legend": {"title": None, "orient": "bottom"},
                 },
                 "order": {"field": "order", "type": "ordinal"},
                 "tooltip": [
-                    {"field": "species", "type": "nominal", "title": "Species"},
+                    {"field": "species", "type": "nominal", "title": text(lang, "species_column")},
                     {"field": "concentration", "type": "quantitative", "title": "mM", "format": ".4f"},
                 ],
             },
@@ -1329,7 +1338,7 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         use_container_width=True,
     )
     st.caption(text(lang, "stacked_chart_note"))
-    st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="result-section-spacer-double" aria-hidden="true"></div>', unsafe_allow_html=True)
     info = result.get("species_model_info", {})
     st.write(text(lang, "model_version"), info.get("model_version", text(lang, "unknown")))
     concentration_range = info.get("training_concentration_range_mM")
@@ -1411,7 +1420,8 @@ def render_model_prediction(api_ok: bool) -> None:
         st.subheader(text(lang, "equilibrium_basis"))
         st.latex(r"\mathrm{Cr_2O_7^{2-} + H_2O \rightleftharpoons 2HCrO_4^-}")
         st.latex(r"\mathrm{HCrO_4^- \rightleftharpoons H^+ + CrO_4^{2-}}")
-        st.latex(r"[\mathrm{CrO_4^{2-}}] = K_{a,2}\frac{[\mathrm{HCrO_4^-}]}{[\mathrm{H^+}]}")
+        st.latex(r"K_1 = \frac{[\mathrm{HCrO_4^-}]^2}{[\mathrm{Cr_2O_7^{2-}}]}")
+        st.latex(r"K_2 = \frac{[\mathrm{H^+}][\mathrm{CrO_4^{2-}}]}{[\mathrm{HCrO_4^-}]}")
         st.latex(
             r"C_{\mathrm{Cr(VI)}} = [\mathrm{HCrO_4^-}] + "
             r"[\mathrm{CrO_4^{2-}}] + 2[\mathrm{Cr_2O_7^{2-}}]"
