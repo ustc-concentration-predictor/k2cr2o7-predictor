@@ -2,6 +2,7 @@
 Streamlit frontend for chromium(VI) species prediction.
 """
 
+import base64
 import io
 import os
 import re
@@ -14,7 +15,7 @@ from urllib.parse import urlsplit
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
-from PIL import Image
+from PIL import Image, ImageOps, UnidentifiedImageError
 from streamlit_cropper import st_cropper
 
 from i18n import text
@@ -264,6 +265,23 @@ st.markdown(
       .result-section-spacer-double {
         height: 2rem;
       }
+      .roi-preview-figure {
+        width: 100%;
+        margin: 0;
+        text-align: center;
+      }
+      .roi-preview-figure img {
+        display: block;
+        width: 100%;
+        max-height: 520px;
+        object-fit: contain;
+        border-radius: 4px;
+      }
+      .roi-preview-figure figcaption {
+        margin-top: .55rem;
+        color: #808495;
+        font-size: .9rem;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -310,6 +328,7 @@ def init_state() -> None:
         "history": [],
         "cropped_image": None,
         "original_image": None,
+        "uploaded_image_key": None,
         "roi_selected": False,
         "last_prediction": None,
         "last_result": None,
@@ -1218,6 +1237,47 @@ def save_crop_for_prediction(cropped: Image.Image, original_name: str) -> bytes:
     return image_buffer.getvalue()
 
 
+def prepare_uploaded_image(uploaded: Any) -> Image.Image:
+    """Fully decode and normalize an upload so it survives Streamlit reruns."""
+    uploaded.seek(0)
+    with Image.open(uploaded) as source:
+        image = ImageOps.exif_transpose(source)
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+        image.thumbnail((2400, 2400), Image.Resampling.LANCZOS)
+        return image.copy()
+
+
+def stable_roi_image(cropped: Image.Image) -> Image.Image:
+    """Detach the crop from component-owned buffers and normalize its mode."""
+    cropped.load()
+    if cropped.mode != "RGB":
+        cropped = cropped.convert("RGB")
+    return cropped.copy()
+
+
+def roi_preview_png(cropped: Image.Image) -> bytes:
+    """Encode a compact browser-safe preview from an independent image."""
+    preview = stable_roi_image(cropped)
+    preview.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+    image_buffer = io.BytesIO()
+    preview.save(image_buffer, format="PNG", optimize=True)
+    return image_buffer.getvalue()
+
+
+def render_inline_roi_preview(cropped: Image.Image, caption: str) -> None:
+    """Bypass Streamlit's temporary media URL, which can expire on rerun."""
+    encoded = base64.b64encode(roi_preview_png(cropped)).decode("ascii")
+    safe_caption = escape(caption)
+    st.markdown(
+        '<figure class="roi-preview-figure">'
+        f'<img src="data:image/png;base64,{encoded}" alt="{safe_caption}">'
+        f"<figcaption>{safe_caption}</figcaption>"
+        "</figure>",
+        unsafe_allow_html=True,
+    )
+
+
 def localize_warning(warning: str, lang: str) -> str:
     """Translate known backend model warnings for the Chinese UI."""
     if lang != "zh":
@@ -1396,16 +1456,29 @@ def render_model_prediction(api_ok: bool) -> None:
             disabled=ph is None,
         )
         if uploaded:
-            image = Image.open(uploaded)
-            st.session_state.original_image = image
-            st.session_state.cropped_image = st_cropper(
-                image,
-                realtime_update=True,
-                box_color="#D92D20",
-                aspect_ratio=None,
-                return_type="image",
-            )
-            st.session_state.roi_selected = True
+            upload_key = (uploaded.name, uploaded.size)
+            if upload_key != st.session_state.uploaded_image_key:
+                st.session_state.uploaded_image_key = upload_key
+                st.session_state.cropped_image = None
+                st.session_state.roi_selected = False
+            try:
+                image = prepare_uploaded_image(uploaded)
+                st.session_state.original_image = image
+                cropped = st_cropper(
+                    image,
+                    realtime_update=True,
+                    box_color="#D92D20",
+                    aspect_ratio=None,
+                    return_type="image",
+                )
+                if cropped is not None:
+                    st.session_state.cropped_image = stable_roi_image(cropped)
+                    st.session_state.roi_selected = True
+            except (UnidentifiedImageError, OSError, ValueError):
+                st.session_state.original_image = None
+                st.session_state.cropped_image = None
+                st.session_state.roi_selected = False
+                st.error(text(lang, "image_load_failed"))
 
         st.caption(text(lang, "training_note"))
 
@@ -1431,11 +1504,13 @@ def render_model_prediction(api_ok: bool) -> None:
     with right:
         st.subheader(text(lang, "roi_preview"))
         if st.session_state.cropped_image:
-            st.image(
-                st.session_state.cropped_image,
-                caption=text(lang, "selected_roi"),
-                use_container_width=True,
-            )
+            try:
+                render_inline_roi_preview(
+                    st.session_state.cropped_image,
+                    text(lang, "selected_roi"),
+                )
+            except (OSError, ValueError):
+                st.error(text(lang, "roi_preview_failed"))
         elif uploaded:
             st.info(text(lang, "draw_roi"))
         else:
