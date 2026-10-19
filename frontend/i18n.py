@@ -95,7 +95,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
             "equilibrium calculation"
         ),
         "sim_title": "Interactive Cr(VI) equilibrium simulator",
-        "sim_initial": "Initial solution: 5 mM K₂Cr₂O₇, about 50 mL",
+        "sim_initial": "Total Cr(VI): 5 mM on a Cr-atom basis, approximately 50 mL",
         "ph_meter": "pH meter",
         "acid": "acid",
         "basic": "basic",
@@ -187,7 +187,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "result_placeholder": '询问本次预测的物种结果、守恒一致性、适用范围，或如何核查可靠性。',
         "footer": "K₂Cr₂O₇ 浓度预测系统 · 机器学习物种预测与平衡计算",
         "sim_title": "Cr(VI) 平衡交互模拟器",
-        "sim_initial": "初始溶液：5 mM K₂Cr₂O₇，约 50 mL",
+        "sim_initial": "总 Cr(VI) 浓度：5 mM（按 Cr 原子计），约 50 mL",
         "ph_meter": "pH 计",
         "acid": "加酸",
         "basic": "碱性",
