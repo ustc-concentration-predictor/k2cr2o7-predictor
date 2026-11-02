@@ -257,7 +257,47 @@ st.markdown(
       .model-feature-note {
         margin: -.35rem 0 .75rem;
         color: #7a7f87;
-        font-size: .92rem;
+        font-size: .875rem;
+        line-height: 1.4;
+      }
+      .metrics-heading-row {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin: 1.33rem 0 1rem;
+      }
+      .metrics-heading-row h4 {
+        margin: 0;
+      }
+      .metrics-help-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        color: #1769aa !important;
+        font-size: .85rem;
+        font-weight: 750;
+        line-height: 1;
+        text-decoration: none !important;
+        border: 1.5px solid #1769aa;
+        border-radius: 50%;
+      }
+      .metrics-help-trigger:hover {
+        color: #ffffff !important;
+        background: #1769aa;
+      }
+      .metrics-help-list {
+        margin: .8rem 0 0;
+      }
+      .metrics-help-list dt {
+        margin-top: .8rem;
+        font-weight: 750;
+      }
+      .metrics-help-list dd {
+        margin: .2rem 0 0;
+        color: #344054;
+        line-height: 1.55;
       }
       .result-section-spacer {
         height: 1rem;
@@ -1356,10 +1396,9 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
         unsafe_allow_html=True,
     )
 
-    d1, d2, d3 = st.columns(3)
+    d1, d2 = st.columns(2)
     d1.metric(text(lang, "heuristic_score"), f"{float(result.get('confidence', 0.0)):.2f}")
-    d2.metric(text(lang, "mass_balance_residual"), f"{residual:.4f} mM")
-    d3.metric("pH", f"{ph:.1f}")
+    d2.metric("pH", f"{ph:.1f}")
 
     st.caption(
         "输入 pH → 图像处理 → 提取 a* 与 R_over_G → 三组分回归预测 → 总 Cr 质量守恒计算 → 化学解释"
@@ -1434,7 +1473,25 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     else:
         range_text = text(lang, "unknown_model_metadata")
     st.write(text(lang, "training_concentration_range"), range_text)
-    st.markdown(f"#### {text(lang, 'external_test_metrics_heading')}")
+    metrics_help_items = "".join(
+        f"<dt>{escape(text(lang, f'metrics_help_{key}_term'))}</dt>"
+        f"<dd>{escape(text(lang, f'metrics_help_{key}_description'))}</dd>"
+        for key in ("gbr", "mae", "mse", "rmse", "r2", "max_abs_error", "bias")
+    )
+    st.markdown(
+        '<div class="metrics-heading-row">'
+        f"<h4>{escape(text(lang, 'external_test_metrics_heading'))}</h4>"
+        '<a class="metrics-help-trigger" href="#metrics-help-modal" '
+        f"aria-label=\"{escape(text(lang, 'metrics_help_open_label'))}\">?</a>"
+        "</div>"
+        '<div id="metrics-help-modal" class="annotation-modal">'
+        '<div class="annotation-dialog">'
+        f'<a href="#" class="annotation-close" aria-label="{escape(text(lang, "metrics_help_close_label"))}">×</a>'
+        f"<h4>{escape(text(lang, 'metrics_help_title'))}</h4>"
+        f'<dl class="metrics-help-list">{metrics_help_items}</dl>'
+        "</div></div>",
+        unsafe_allow_html=True,
+    )
     st.dataframe(info.get("external_test_metrics", []))
 
     for warning in result.get("warnings", []):
