@@ -254,7 +254,7 @@ st.markdown(
           grid-template-columns: 1fr;
         }
       }
-      .lab-a-note {
+      .model-feature-note {
         margin: -.35rem 0 .75rem;
         color: #7a7f87;
         font-size: .92rem;
@@ -1302,14 +1302,14 @@ def localize_warning(warning: str, lang: str) -> str:
         return "模型未提供训练颜色特征范围，无法判断图像是否处于训练域内；请咨询教师。"
     if "is outside the training color-feature range" in warning:
         match = re.match(
-            r"Lab a\*=([^ ]+) is outside the training color-feature range for routed pH ([^ ]+) "
+            r"(Lab a\*|R_over_G)=([^ ]+) is outside the training color-feature range for routed pH ([^ ]+) "
             r"\(([^–]+)–([^\)]+)\); image domain validity is uncertain\. Consult your teacher\.",
             warning,
         )
         if match:
-            value, routed_ph, lower, upper = match.groups()
+            feature, value, routed_ph, lower, upper = match.groups()
             return (
-                f"Lab a*={value} 超出所路由 pH {routed_ph} 子模型的训练颜色特征范围"
+                f"{feature}={value} 超出所路由 pH {routed_ph} 子模型的训练颜色特征范围"
                 f"（{lower}–{upper}）；当前图像是否处于训练域内仍不确定，请咨询教师。"
             )
     return warning
@@ -1362,15 +1362,17 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     d3.metric("pH", f"{ph:.1f}")
 
     st.caption(
-        "输入 pH → 图像处理 → 提取 a* → 三组分回归预测 → 总 Cr 质量守恒计算 → 化学解释"
+        "输入 pH → 图像处理 → 提取 a* 与 R_over_G → 三组分回归预测 → 总 Cr 质量守恒计算 → 化学解释"
         if lang == "zh"
-        else "Input pH → image processing → a* extraction → three-species regression → total Cr mass balance → interpretation"
+        else "Input pH → image processing → a* and R_over_G extraction → three-species regression → total Cr mass balance → interpretation"
     )
     st.markdown('<div class="result-section-spacer-double" aria-hidden="true"></div>', unsafe_allow_html=True)
-    lab_a = result.get("features_used", {}).get("lab", [None, None, None])[1]
-    st.write(text(lang, "extracted_lab_a"), lab_a)
+    features_used = result.get("features_used", {})
+    lab_a = features_used.get("lab", [None, None, None])[1]
+    r_over_g = features_used.get("ratios", {}).get("R_over_G")
+    st.write(text(lang, "extracted_model_features"), f"Lab a* = {lab_a}; R_over_G = {r_over_g}")
     st.markdown(
-        f'<p class="lab-a-note">{text(lang, "lab_a_note")}</p>',
+        f'<p class="model-feature-note">{text(lang, "model_features_note")}</p>',
         unsafe_allow_html=True,
     )
     st.markdown('<div class="result-section-spacer" aria-hidden="true"></div>', unsafe_allow_html=True)

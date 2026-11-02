@@ -2,8 +2,8 @@
 
 The frontend is expected to upload a cropped solution-region image. The backend
 then applies a consistent lighting normalization step before extracting RGB,
-HSV, Lab, and ratio features. The deployed final model uses only Lab ``a``, but
-the full feature vector is kept for compatibility and frontend display.
+HSV, Lab, and ratio features. The deployed final model uses Lab ``a`` and
+``R_over_G``; the full feature vector is kept for compatibility and display.
 """
 
 from __future__ import annotations
@@ -102,7 +102,10 @@ class ImagePreprocessor:
         features_with_ph = features.copy()
         features_with_ph["pH"] = float(ph)
         vector = np.array([features_with_ph[key] for key in self.FEATURE_ORDER], dtype=float)
-        logger.info("Extracted Lab a=%.4f for pH=%.2f", features_with_ph["a"], ph)
+        logger.info(
+            "Extracted Lab a=%.4f and R_over_G=%.6f for pH=%.2f",
+            features_with_ph["a"], features_with_ph["R_over_G"], ph,
+        )
         return vector.reshape(1, -1)
 
 

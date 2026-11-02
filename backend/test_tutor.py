@@ -345,16 +345,23 @@ class TutorTests(unittest.TestCase):
         self.assertAlmostEqual(species["mass_balance_residual_mM"], 0.0)
         self.assertEqual(result["model_info"]["target_cols"], ["HCrO4_mM", "Cr2O7_mM", "CrO4_mM"])
         self.assertEqual(result["model_info"]["computed_species"], ["total_cr_mM"])
+        self.assertEqual(result["model_info"]["features"], ["a", "R_over_G"])
         self.assertTrue(result["model_info"]["external_test_metrics"])
         self.assertEqual(result["model_info"]["training_concentration_range_mM"], [1.0, 10.0])
         self.assertIn("a", result["model_info"]["training_feature_ranges"])
+        self.assertIn("R_over_G", result["model_info"]["training_feature_ranges"])
 
-    def test_training_color_range_warning_depends_on_lab_a(self):
+    def test_training_color_range_warning_checks_both_deployed_features(self):
         predictor = SpeciesPredictor()
-        in_range = predictor._generate_warnings(6.0, 6.0, {"a": 130.0})
-        out_of_range = predictor._generate_warnings(6.0, 6.0, {"a": 115.0})
+        in_range = predictor._generate_warnings(6.0, 6.0, {"a": 130.0, "R_over_G": 1.2})
+        lower_edge = predictor._generate_warnings(
+            6.0, 6.0, {"a": 124.43874382857433, "R_over_G": 1.1259990078379223}
+        )
+        out_of_range = predictor._generate_warnings(6.0, 6.0, {"a": 115.0, "R_over_G": 1.5})
         self.assertFalse(any("color-feature range" in warning for warning in in_range))
-        self.assertTrue(any("Lab a*=115.000" in warning for warning in out_of_range))
+        self.assertFalse(any("color-feature range" in warning for warning in lower_edge))
+        self.assertTrue(any("Lab a*=115.0000" in warning for warning in out_of_range))
+        self.assertTrue(any("R_over_G=1.5000" in warning for warning in out_of_range))
 
 
 if __name__ == "__main__":

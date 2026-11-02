@@ -50,7 +50,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "prediction": "Model Prediction",
         "workflow": (
             "Workflow: upload an ROI image and pH, standardize illumination, "
-            "extract the Lab a feature, directly predict HCrO₄⁻, Cr₂O₇²⁻, "
+            "extract the Lab a and R_over_G features, directly predict HCrO₄⁻, Cr₂O₇²⁻, "
             "and CrO₄²⁻, then compute total Cr(VI) by mass balance."
         ),
         "sample_image": "Sample image",
@@ -72,8 +72,8 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "estimated_total": "Calculated total Cr(VI)",
         "confidence": "Confidence",
         "mass_balance_residual": "Mass-balance residual",
-        "extracted_lab_a": "Extracted Lab a*:",
-        "lab_a_note": "The a* value represents the green-to-red direction in the image: larger values are redder, and smaller values are greener.",
+        "extracted_model_features": "Extracted model features:",
+        "model_features_note": "The a* value represents the green-to-red direction in the image: larger values are redder and smaller values are greener. R_over_G is the mean red-channel value divided by the mean green-channel value.",
         "species_column": "Species",
         "concentration_mM_column": "Concentration (mM)",
         "source_column": "Source",
@@ -148,7 +148,7 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "prediction": "模型预测",
         "workflow": (
             "流程：上传感兴趣区域（ROI）图像并输入 pH，进行光照标准化，"
-            "提取 Lab a 特征，直接预测 HCrO₄⁻、Cr₂O₇²⁻ 和 CrO₄²⁻，"
+            "提取 Lab a 与 R_over_G 两个特征，直接预测 HCrO₄⁻、Cr₂O₇²⁻ 和 CrO₄²⁻，"
             "再依据铬元素质量守恒计算总 Cr(VI)。"
         ),
         "sample_image": "样品图像",
@@ -167,8 +167,8 @@ UI_TEXT: Dict[str, Dict[str, str]] = {
         "estimated_total": "守恒计算总 Cr(VI)",
         "confidence": "置信度",
         "mass_balance_residual": "物料衡算残差",
-        "extracted_lab_a": "提取的 Lab a*：",
-        "lab_a_note": "a值表示图片绿到红方向，值越大越偏红，越小越偏绿。",
+        "extracted_model_features": "提取的模型特征：",
+        "model_features_note": "a* 值表示图片绿到红方向，值越大越偏红，越小越偏绿；R_over_G 表示图像红通道均值与绿通道均值之比。",
         "species_column": "物种",
         "concentration_mM_column": "浓度（mM）",
         "source_column": "来源",

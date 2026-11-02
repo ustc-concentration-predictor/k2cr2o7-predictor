@@ -83,7 +83,7 @@ streamlit run app.py
 ### 模型信息
 
 - **类型**: 分 pH 子模型的 GradientBoostingRegressor
-- **特征**: Lab `a*`；pH 用于路由到最近的训练子模型
+- **特征**: Lab `a*` 与 `R_over_G`；pH 用于路由到最近的训练子模型
 - **平衡常数**: K₂ = 3.0×10⁻⁷
 - **直接预测**: HCrO₄⁻、Cr₂O₇²⁻、CrO₄²⁻
 - **守恒计算**: 总 Cr(VI) = HCrO₄⁻ + 2×Cr₂O₇²⁻ + CrO₄²⁻

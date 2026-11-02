@@ -1,8 +1,8 @@
 """Deployed chromium(VI) species prediction model.
 
 The route uses pH-specific GradientBoostingRegressor submodels. Each
-submodel uses a single image feature, Lab ``a``, to predict three species
-concentrations directly:
+submodel uses two image features, Lab ``a`` and ``R_over_G``, to predict
+three species concentrations directly:
 
     HCrO4-, Cr2O7^2-, and CrO4^2-
 
@@ -27,9 +27,9 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-# The deployed artifact is the verified Ka2=3e-7 three-species model. Its
-# original package predates metadata fields for training-domain reporting, so
-# retain the ranges calculated from the exact 114-row training table here.
+# The deployed artifact is the verified Ka2=3e-7, a + R_over_G three-species
+# model. Its package omits training-domain metadata, so retain the ranges
+# calculated from the exact 114-row training table here.
 DEPLOYED_TRAINING_CONCENTRATION_RANGE_MM = [1.0, 10.0]
 DEPLOYED_TRAINING_FEATURE_RANGES = {
     "a": {
@@ -41,6 +41,17 @@ DEPLOYED_TRAINING_FEATURE_RANGES = {
             6.0: {"min": 124.43874382857432, "max": 139.0798279689234},
             7.0: {"min": 121.89387654320988, "max": 130.8430410275106},
             8.0: {"min": 120.32704081632652, "max": 122.90827771598072},
+        },
+    },
+    "R_over_G": {
+        "overall": {"min": 1.055610967827742, "max": 1.420436104008958},
+        "by_ph": {
+            3.0: {"min": 1.151548921160088, "max": 1.393979998979049},
+            4.0: {"min": 1.1408391983029802, "max": 1.420436104008958},
+            5.0: {"min": 1.1355247731604776, "max": 1.3917191708033467},
+            6.0: {"min": 1.1259990078379225, "max": 1.3682482627067625},
+            7.0: {"min": 1.0820378486184794, "max": 1.233023327980495},
+            8.0: {"min": 1.055610967827742, "max": 1.1087590224857222},
         },
     },
 }
@@ -73,12 +84,12 @@ class SpeciesPredictor:
             model_path = Path(__file__).parent / "models" / "species_model.joblib"
         self.model_path = Path(model_path)
         self.models_by_ph: Dict[float, Any] = {}
-        self.feature_cols: List[str] = ["a"]
+        self.feature_cols: List[str] = ["a", "R_over_G"]
         self.target_cols: List[str] = ["HCrO4_mM", "Cr2O7_mM", "CrO4_mM"]
         self.valid_ph_range = (3.0, 8.0)
         self.ka1 = 2.94e-2
         self.ka2 = 3.0e-7
-        self.model_name = "pH-submodel GradientBoostingRegressor, single a, three direct species targets"
+        self.model_name = "pH-submodel GradientBoostingRegressor, a + R_over_G"
         self.route_strategy = "nearest_available_pH_submodel"
         self.metrics: List[Dict[str, Any]] = []
         self.computed_species: List[str] = ["total_cr_mM"]
@@ -202,17 +213,22 @@ class SpeciesPredictor:
         if not self.training_feature_ranges:
             warnings.append("Training color-feature ranges are unavailable; image domain validity cannot be assessed. Consult your teacher.")
         else:
-            a_metadata = self.training_feature_ranges.get("a", {})
-            by_ph = a_metadata.get("by_ph", {}) if isinstance(a_metadata, dict) else {}
-            bounds = by_ph.get(routed_ph) or by_ph.get(str(routed_ph))
-            if bounds and "a" in feature_dict:
-                a_value = float(feature_dict["a"])
+            feature_labels = {"a": "Lab a*", "R_over_G": "R_over_G"}
+            for feature_name in self.feature_cols:
+                metadata = self.training_feature_ranges.get(feature_name, {})
+                by_ph = metadata.get("by_ph", {}) if isinstance(metadata, dict) else {}
+                bounds = by_ph.get(routed_ph) or by_ph.get(str(routed_ph))
+                if not bounds or feature_name not in feature_dict:
+                    continue
+                value = float(feature_dict[feature_name])
                 lower = float(bounds["min"])
                 upper = float(bounds["max"])
-                if a_value < lower or a_value > upper:
+                tolerance = 1e-9 * max(1.0, abs(lower), abs(upper))
+                if value < lower - tolerance or value > upper + tolerance:
+                    label = feature_labels.get(feature_name, feature_name)
                     warnings.append(
-                        f"Lab a*={a_value:.3f} is outside the training color-feature range "
-                        f"for routed pH {routed_ph:g} ({lower:.3f}–{upper:.3f}); image domain "
+                        f"{label}={value:.4f} is outside the training color-feature range "
+                        f"for routed pH {routed_ph:g} ({lower:.4f}–{upper:.4f}); image domain "
                         "validity is uncertain. Consult your teacher."
                     )
         ph_min, ph_max = self.valid_ph_range

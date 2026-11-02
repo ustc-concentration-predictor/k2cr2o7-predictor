@@ -83,7 +83,7 @@ Frontend (Streamlit) ←→ Backend (FastAPI) ←→ pH-specific GradientBoostin
 ### Model Information
 
 - **Type**: pH-specific GradientBoostingRegressor submodels
-- **Feature**: Lab `a*`; pH routes to the nearest trained submodel
+- **Features**: Lab `a*` and `R_over_G`; pH routes to the nearest trained submodel
 - **Equilibrium constant**: K₂ = 3.0×10⁻⁷
 - **Direct predictions**: HCrO₄⁻, Cr₂O₇²⁻, and CrO₄²⁻
 - **Mass-balance output**: total Cr(VI) = HCrO₄⁻ + 2×Cr₂O₇²⁻ + CrO₄²⁻
