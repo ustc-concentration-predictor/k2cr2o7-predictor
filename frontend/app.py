@@ -1397,8 +1397,12 @@ def render_prediction_results(result: Dict[str, Any], ph: float) -> None:
     )
 
     d1, d2 = st.columns(2)
-    d1.metric(text(lang, "heuristic_score"), f"{float(result.get('confidence', 0.0)):.2f}")
-    d2.metric("pH", f"{ph:.1f}")
+    d1.metric("pH", f"{ph:.1f}")
+    with d2:
+        if 3.0 <= ph <= 8.0:
+            st.success(text(lang, "ph_in_training_range"))
+        else:
+            st.warning(text(lang, "ph_outside_training_range"))
 
     st.caption(
         "输入 pH → 图像处理 → 提取 a* 与 R_over_G → 三组分回归预测 → 总 Cr 质量守恒计算 → 化学解释"
